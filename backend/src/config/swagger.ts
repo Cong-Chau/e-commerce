@@ -23,7 +23,7 @@ const swaggerDefinition = {
       description: 'Development Server',
       variables: {
         port: {
-          default: '3000',
+          default: '5000',
           description: 'Port của server',
         },
       },
@@ -136,6 +136,30 @@ const swaggerDefinition = {
           createdAt: { type: 'string', format: 'date-time' },
         },
       },
+      UserListItem: {
+        type: 'object',
+        properties: {
+          id:         { type: 'integer', example: 1 },
+          name:       { type: 'string',  example: 'Nguyễn Văn An' },
+          email:      { type: 'string',  example: 'nguyenvanan@gmail.com' },
+          phone:      { type: 'string',  nullable: true, example: '0901234501' },
+          status:     { type: 'string',  enum: ['ACTIVE', 'BANNED'], example: 'ACTIVE' },
+          roles:      { type: 'array', items: { type: 'string', enum: ['CUSTOMER', 'SELLER'] }, example: ['CUSTOMER'] },
+          created_at: { type: 'string',  format: 'date-time' },
+        },
+      },
+      PaginatedUsers: {
+        type: 'object',
+        properties: {
+          success:    { type: 'boolean', example: true },
+          message:    { type: 'string',  example: 'Lấy danh sách người dùng thành công' },
+          items:      { type: 'array', items: { $ref: '#/components/schemas/UserListItem' } },
+          total:      { type: 'integer', example: 20 },
+          page:       { type: 'integer', example: 1 },
+          limit:      { type: 'integer', example: 10 },
+          totalPages: { type: 'integer', example: 2 },
+        },
+      },
       TokenPair: {
         type: 'object',
         properties: {
@@ -179,7 +203,8 @@ const swaggerDefinition = {
     },
   },
   tags: [
-    { name: 'Auth', description: 'Xác thực & quản lý tài khoản người dùng' },
+    { name: 'Auth',  description: 'Xác thực & quản lý tài khoản người dùng' },
+    { name: 'Users', description: 'Quản lý người dùng (chỉ dành cho ADMIN)' },
   ],
 };
 
