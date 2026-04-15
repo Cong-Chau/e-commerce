@@ -5,6 +5,7 @@ import prisma from "../config/prisma";
 import config from "../config/env";
 import { AppError } from "../middlewares/error.middleware";
 import type { UpdateProfileInput } from "../dtos/auth.dto";
+import { RoleName } from "@prisma/client";
 
 export interface JwtPayload {
   userId: number;
@@ -28,7 +29,12 @@ function generateRefreshToken(): string {
 
 export class AuthService {
   // ─── Register ────────────────────────────────────────────────
-  async register(name: string, email: string, password: string) {
+  async register(
+    name: string,
+    email: string,
+    password: string,
+    role: RoleName = RoleName.CUSTOMER,
+  ) {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       throw new AppError("Email đã được sử dụng", 409);
@@ -51,12 +57,11 @@ export class AuthService {
         },
       });
 
-      const customerRole = await tx.role.findUnique({
-        where: { name: "CUSTOMER" },
-      });
-      if (customerRole) {
+      // Gán role cho user
+      const roleRecord = await tx.role.findUnique({ where: { name: role } });
+      if (roleRecord) {
         await tx.userRole.create({
-          data: { user_id: newUser.id, role_id: customerRole.id },
+          data: { user_id: newUser.id, role_id: roleRecord.id },
         });
       }
 
@@ -91,7 +96,11 @@ export class AuthService {
     }
 
     const roles = user.userRoles.map((ur: any) => ur.role.name as string);
-    const accessToken = signAccessToken({ userId: user.id, email: user.email, roles });
+    const accessToken = signAccessToken({
+      userId: user.id,
+      email: user.email,
+      roles,
+    });
 
     const refreshToken = generateRefreshToken();
     const expiresAt = new Date(Date.now() + config.refreshToken.expiresInMs);
@@ -115,7 +124,9 @@ export class AuthService {
   async refresh(token: string) {
     const account = await prisma.account.findUnique({
       where: { refresh_token: token },
-      include: { user: { include: { userRoles: { include: { role: true } } } } },
+      include: {
+        user: { include: { userRoles: { include: { role: true } } } },
+      },
     });
 
     if (
@@ -130,7 +141,9 @@ export class AuthService {
       throw new AppError("Tài khoản đã bị khoá", 403);
     }
 
-    const roles = account.user.userRoles.map((ur: any) => ur.role.name as string);
+    const roles = account.user.userRoles.map(
+      (ur: any) => ur.role.name as string,
+    );
     const newAccessToken = signAccessToken({
       userId: account.user.id,
       email: account.user.email,
@@ -186,7 +199,10 @@ export class AuthService {
   }
 
   // ─── Update Profile ──────────────────────────────────────────
-  async updateProfile(userId: number, data: Pick<UpdateProfileInput, 'name'> & { phone?: string }) {
+  async updateProfile(
+    userId: number,
+    data: Pick<UpdateProfileInput, "name"> & { phone?: string },
+  ) {
     if (!data.name && !data.phone) {
       throw new AppError("Không có thông tin nào được cập nhật", 400);
     }

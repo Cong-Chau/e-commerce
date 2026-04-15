@@ -1,6 +1,8 @@
 import { Router } from "express";
 import authRoute from "./auth.route";
 import userRoute from "./user.route";
+import categoryRoute from "./category.route";
+
 const router = Router();
 
 // Health check
@@ -9,7 +11,7 @@ router.get("/health", (_req, res) => {
 });
 
 router.use("/auth", authRoute);
-
 router.use("/users", userRoute);
+router.use("/categories", categoryRoute);
 
 export default router;

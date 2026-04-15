@@ -77,6 +77,13 @@ const swaggerDefinition = {
             minLength: 6,
             example: 'Password@123',
           },
+          role: {
+            type: 'string',
+            enum: ['CUSTOMER', 'SELLER'],
+            default: 'CUSTOMER',
+            description: 'Vai trò khi đăng ký. Mặc định là CUSTOMER nếu không truyền.',
+            example: 'CUSTOMER',
+          },
         },
       },
       LoginBody: {
@@ -134,6 +141,57 @@ const swaggerDefinition = {
           phone: { type: 'string', nullable: true, example: '0901234567' },
           role: { type: 'string', enum: ['CUSTOMER', 'ADMIN'], example: 'CUSTOMER' },
           createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      CreateCategoryBody: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+          name:      { type: 'string', minLength: 2, maxLength: 100, example: 'Thực Phẩm & Đồ Uống' },
+          parent_id: { type: 'integer', nullable: true, example: null, description: 'ID danh mục cha (null nếu là danh mục gốc)' },
+        },
+      },
+      UpdateCategoryBody: {
+        type: 'object',
+        properties: {
+          name:      { type: 'string', minLength: 2, maxLength: 100, example: 'Thời Trang Nam & Nữ' },
+          parent_id: { type: 'integer', nullable: true, example: null },
+        },
+      },
+      CategoryItemResponse: {
+        allOf: [
+          { $ref: '#/components/schemas/SuccessResponse' },
+          { properties: { data: { $ref: '#/components/schemas/CategoryItem' } } },
+        ],
+      },
+      CategoryItem: {
+        type: 'object',
+        properties: {
+          id:        { type: 'integer', example: 1 },
+          name:      { type: 'string',  example: 'Thời Trang Nam' },
+          parent_id: { type: 'integer', nullable: true, example: null },
+          children:  { type: 'array',  items: { $ref: '#/components/schemas/CategoryItem' } },
+        },
+      },
+      CategoryAdminItem: {
+        type: 'object',
+        properties: {
+          id:           { type: 'integer', example: 1 },
+          name:         { type: 'string',  example: 'Điện Thoại & Phụ Kiện' },
+          parent_id:    { type: 'integer', nullable: true, example: null },
+          productCount: { type: 'integer', example: 158 },
+          children: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                id:           { type: 'integer', example: 5 },
+                name:         { type: 'string',  example: 'Điện Thoại Di Động' },
+                parent_id:    { type: 'integer', example: 1 },
+                productCount: { type: 'integer', example: 90 },
+              },
+            },
+          },
         },
       },
       UserListItem: {
@@ -203,8 +261,9 @@ const swaggerDefinition = {
     },
   },
   tags: [
-    { name: 'Auth',  description: 'Xác thực & quản lý tài khoản người dùng' },
-    { name: 'Users', description: 'Quản lý người dùng (chỉ dành cho ADMIN)' },
+    { name: 'Auth',       description: 'Xác thực & quản lý tài khoản người dùng' },
+    { name: 'Users',      description: 'Quản lý người dùng (chỉ dành cho ADMIN)' },
+    { name: 'Categories', description: 'Danh mục sản phẩm' },
   ],
 };
 

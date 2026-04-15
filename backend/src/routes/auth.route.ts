@@ -31,13 +31,30 @@ const router = Router();
  *     tags:
  *       - Auth
  *     summary: Đăng ký tài khoản mới
- *     description: Tạo tài khoản người dùng mới với vai trò mặc định là **CUSTOMER**.
+ *     description: |
+ *       Tạo tài khoản người dùng mới.
+ *       - Nếu không truyền `role`, mặc định là **CUSTOMER**.
+ *       - Chỉ cho phép đăng ký với role **CUSTOMER** hoặc **SELLER**.
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/RegisterBody'
+ *           examples:
+ *             customer:
+ *               summary: Đăng ký Customer (mặc định)
+ *               value:
+ *                 name: Nguyễn Văn A
+ *                 email: nguyenvana@example.com
+ *                 password: Password@123
+ *             seller:
+ *               summary: Đăng ký Seller
+ *               value:
+ *                 name: Trần Thị B
+ *                 email: tranthib@example.com
+ *                 password: Password@123
+ *                 role: SELLER
  *     responses:
  *       201:
  *         description: Đăng ký thành công
@@ -53,14 +70,20 @@ const router = Router();
  *               success: true
  *               message: Đăng ký tài khoản thành công
  *               data:
- *                 id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ *                 id: 1
  *                 name: Nguyễn Văn A
  *                 email: nguyenvana@example.com
- *                 phone: null
- *                 role: CUSTOMER
- *                 createdAt: "2026-04-14T08:00:00.000Z"
  *       400:
  *         $ref: '#/components/responses/BadRequest'
+ *       409:
+ *         description: Email đã được sử dụng
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: Email đã được sử dụng
  */
 router.post('/register', validate(RegisterDto), register);
 

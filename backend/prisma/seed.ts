@@ -46,6 +46,38 @@ const SEED_USERS: SeedUser[] = [
 
 const DEFAULT_PASSWORD = 'Password@123';
 
+// ─── Danh mục ─────────────────────────────────────────────────────────────────
+
+const SEED_CATEGORIES = [
+  'Thời Trang Nam',
+  'Điện Thoại & Phụ Kiện',
+  'Thiết Bị Điện Tử',
+  'Máy Tính & Laptop',
+  'Máy Ảnh & Máy Quay Phim',
+  'Đồng Hồ',
+  'Giày Dép Nam',
+  'Thiết Bị Điện Gia Dụng',
+  'Thể Thao & Du Lịch',
+  'Ô Tô & Xe Máy & Xe Đạp',
+  'Thời Trang Nữ',
+  'Mẹ & Bé',
+  'Nhà Cửa & Đời Sống',
+  'Sắc Đẹp',
+  'Sức Khỏe',
+  'Giày Dép Nữ',
+  'Túi Ví Nữ',
+  'Phụ Kiện & Trang Sức Nữ',
+  'Bách Hóa Online',
+  'Nhà Sách Online',
+  'Balo & Túi Ví Nam',
+  'Đồ Chơi',
+  'Chăm Sóc Thú Cưng',
+  'Dụng Cụ và Thiết Bị Tiện Ích',
+  'Thời Trang Trẻ Em',
+  'Giặt Giũ & Chăm Sóc Nhà Cửa',
+  'Voucher & Dịch Vụ',
+];
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -116,8 +148,28 @@ async function main() {
 
   if (skipped > 0) console.log(`  ↩  Bỏ qua ${skipped} user đã tồn tại`);
 
-  console.log(`\n✅ Seed hoàn tất! Tạo mới: ${created} user, bỏ qua: ${skipped}`);
-  console.log(`🔑 Mật khẩu mặc định cho user mẫu: ${DEFAULT_PASSWORD}`);
+  // ── Categories ─────────────────────────────────────────────────
+  console.log('\n🗂️  Tạo danh mục...');
+  let catCreated = 0;
+  let catSkipped = 0;
+
+  for (const name of SEED_CATEGORIES) {
+    const existing = await prisma.category.findFirst({ where: { name, parent_id: null } });
+    if (existing) {
+      catSkipped++;
+      continue;
+    }
+    await prisma.category.create({ data: { name, parent_id: null } });
+    catCreated++;
+    console.log(`  ✔ ${name}`);
+  }
+
+  if (catSkipped > 0) console.log(`  ↩  Bỏ qua ${catSkipped} danh mục đã tồn tại`);
+
+  console.log(`\n✅ Seed hoàn tất!`);
+  console.log(`   Users    — tạo mới: ${created}, bỏ qua: ${skipped}`);
+  console.log(`   Danh mục — tạo mới: ${catCreated}, bỏ qua: ${catSkipped}`);
+  console.log(`🔑 Mật khẩu mặc định: ${DEFAULT_PASSWORD}`);
 }
 
 main()
