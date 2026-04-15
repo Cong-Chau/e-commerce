@@ -206,6 +206,140 @@ const swaggerDefinition = {
           created_at: { type: 'string',  format: 'date-time' },
         },
       },
+      CreateProductBody: {
+        type: 'object',
+        required: ['name', 'price', 'category_id'],
+        properties: {
+          name:        { type: 'string', minLength: 2, maxLength: 255, example: 'Áo thun nam basic' },
+          description: { type: 'string', example: 'Chất liệu cotton 100%, thoáng mát' },
+          price:       { type: 'number', minimum: 0, exclusiveMinimum: true, example: 150000 },
+          stock:       { type: 'integer', minimum: 0, default: 0, example: 100 },
+          category_id: { type: 'integer', example: 3 },
+          images: {
+            type: 'array',
+            items: { type: 'string', format: 'uri' },
+            example: ['https://example.com/images/ao-thun-1.jpg'],
+          },
+        },
+      },
+      CreateProductResponse: {
+        allOf: [
+          { $ref: '#/components/schemas/SuccessResponse' },
+          {
+            properties: {
+              data: {
+                type: 'object',
+                properties: {
+                  id:          { type: 'integer', example: 42 },
+                  name:        { type: 'string',  example: 'Áo thun nam basic' },
+                  description: { type: 'string',  example: 'Chất liệu cotton 100%, thoáng mát' },
+                  price:       { type: 'string',  example: '150000' },
+                  stock:       { type: 'integer', example: 100 },
+                  status:      { type: 'string',  enum: ['ACTIVE', 'INACTIVE', 'DELETED'], example: 'ACTIVE' },
+                  created_at:  { type: 'string',  format: 'date-time' },
+                  category: {
+                    type: 'object',
+                    properties: {
+                      id:   { type: 'integer', example: 3 },
+                      name: { type: 'string',  example: 'Thời Trang Nam' },
+                    },
+                  },
+                  images: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        id:        { type: 'integer', example: 10 },
+                        image_url: { type: 'string',  example: 'https://example.com/images/ao-thun-1.jpg' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        ],
+      },
+      UpdateProductImagesBody: {
+        type: 'object',
+        required: ['images'],
+        properties: {
+          images: {
+            type: 'array',
+            minItems: 1,
+            items: { type: 'string', format: 'uri' },
+            example: ['https://example.com/images/ao-thun-new-1.jpg'],
+          },
+        },
+      },
+      UpdateProductImagesResponse: {
+        allOf: [
+          { $ref: '#/components/schemas/SuccessResponse' },
+          {
+            properties: {
+              data: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id:        { type: 'integer', example: 11 },
+                    image_url: { type: 'string',  example: 'https://example.com/images/ao-thun-new-1.jpg' },
+                  },
+                },
+              },
+            },
+          },
+        ],
+      },
+      MyProductsResponse: {
+        type: 'object',
+        properties: {
+          success:    { type: 'boolean', example: true },
+          message:    { type: 'string',  example: 'Lấy danh sách sản phẩm thành công' },
+          items: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                id:         { type: 'integer', example: 10 },
+                name:       { type: 'string',  example: 'Áo thun nam basic' },
+                price:      { type: 'string',  example: '150000' },
+                stock:      { type: 'integer', example: 100 },
+                status:     { type: 'string',  enum: ['ACTIVE', 'INACTIVE', 'DELETED'], example: 'ACTIVE' },
+                created_at: { type: 'string',  format: 'date-time' },
+                category: {
+                  type: 'object',
+                  properties: {
+                    id:   { type: 'integer', example: 1 },
+                    name: { type: 'string',  example: 'Thời Trang Nam' },
+                  },
+                },
+                images: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id:        { type: 'integer', example: 5 },
+                      image_url: { type: 'string',  example: 'https://example.com/images/ao-thun.jpg' },
+                    },
+                  },
+                },
+                _count: {
+                  type: 'object',
+                  properties: {
+                    reviews:    { type: 'integer', example: 12 },
+                    orderItems: { type: 'integer', example: 35 },
+                  },
+                },
+              },
+            },
+          },
+          total:      { type: 'integer', example: 24 },
+          page:       { type: 'integer', example: 1 },
+          limit:      { type: 'integer', example: 10 },
+          totalPages: { type: 'integer', example: 3 },
+        },
+      },
       PaginatedUsers: {
         type: 'object',
         properties: {
@@ -264,6 +398,7 @@ const swaggerDefinition = {
     { name: 'Auth',       description: 'Xác thực & quản lý tài khoản người dùng' },
     { name: 'Users',      description: 'Quản lý người dùng (chỉ dành cho ADMIN)' },
     { name: 'Categories', description: 'Danh mục sản phẩm' },
+    { name: 'Products',   description: 'Quản lý sản phẩm' },
   ],
 };
 
