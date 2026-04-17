@@ -7,6 +7,7 @@ import {
   getProfile,
   updateProfile,
   changePassword,
+  googleAuth,
 } from '../controllers/auth.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate.middleware';
@@ -86,6 +87,33 @@ const router = Router();
  *               message: Email đã được sử dụng
  */
 router.post('/register', validate(RegisterDto), register);
+
+/**
+ * @openapi
+ * /auth/google:
+ *   post:
+ *     tags:
+ *       - Auth
+ *     summary: Đăng nhập bằng Google
+ *     description: Xác thực Google ID token và trả về JWT của hệ thống.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token]
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: Google ID token từ frontend
+ *     responses:
+ *       200:
+ *         description: Đăng nhập thành công
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+router.post('/google', googleAuth);
 
 /**
  * @openapi

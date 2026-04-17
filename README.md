@@ -1,12 +1,13 @@
 # E-Commerce Platform
 
-Nền tảng thương mại điện tử full-stack với **Backend REST API** (Node.js + Express + TypeScript + Prisma) và **Frontend** (React 19 + TypeScript + Vite).
+Nền tảng thương mại điện tử full-stack với **Backend REST API** (Node.js + Express + TypeScript + Prisma) và **Frontend SPA** (React 19 + TypeScript + Vite + Tailwind CSS v4).
 
 ---
 
 ## Mục lục
 
 - [Tổng quan kiến trúc](#tổng-quan-kiến-trúc)
+- [Tính năng](#tính-năng)
 - [Công nghệ sử dụng](#công-nghệ-sử-dụng)
 - [Cấu trúc dự án](#cấu-trúc-dự-án)
 - [Database Schema](#database-schema)
@@ -20,14 +21,39 @@ Nền tảng thương mại điện tử full-stack với **Backend REST API** (
 
 ```
 e-commerce/
-├── backend/    # REST API — Node.js, Express, TypeScript, Prisma, PostgreSQL
-└── frontend/   # SPA — React 19, TypeScript, Vite
+├── backend/    # REST API — Node.js · Express · TypeScript · Prisma · PostgreSQL
+└── frontend/   # SPA     — React 19 · TypeScript · Vite · Tailwind CSS v4
 ```
 
-- Backend chạy tại `http://localhost:5000`
-- Frontend chạy tại `http://localhost:5173`
-- Swagger UI: `http://localhost:5000/api/v1/docs`
-- OpenAPI JSON: `http://localhost:5000/api/v1/docs.json`
+| Service | URL |
+|---------|-----|
+| Backend API | `http://localhost:5000` |
+| Frontend | `http://localhost:5173` |
+| Swagger UI | `http://localhost:5000/api/v1/docs` |
+| OpenAPI JSON | `http://localhost:5000/api/v1/docs.json` |
+
+---
+
+## Tính năng
+
+### Xác thực & Phân quyền
+- Đăng ký tài khoản (CUSTOMER hoặc SELLER)
+- Đăng nhập bằng email/mật khẩu
+- **Đăng nhập bằng Google OAuth 2.0** (ID token verification phía backend)
+- JWT access token + refresh token rotation
+- Phân quyền theo role: CUSTOMER · SELLER · ADMIN
+- Bảo vệ route trên cả frontend và backend
+
+### Quản lý sản phẩm
+- CRUD sản phẩm (Seller)
+- Upload và quản lý ảnh sản phẩm
+- Phân loại theo danh mục đa cấp (Category tree)
+- Quản lý tồn kho và trạng thái sản phẩm
+
+### Quản lý người dùng
+- Xem danh sách người dùng (Admin)
+- Khoá / mở khoá tài khoản
+- Cập nhật thông tin cá nhân, đổi mật khẩu
 
 ---
 
@@ -35,28 +61,33 @@ e-commerce/
 
 ### Backend
 
-| Thành phần      | Công nghệ                          |
-|-----------------|------------------------------------|
-| Runtime         | Node.js                            |
-| Framework       | Express.js v5                      |
-| Ngôn ngữ        | TypeScript 5                       |
-| ORM             | Prisma 7 (adapter: `@prisma/adapter-pg`) |
-| Database        | PostgreSQL                         |
-| Xác thực        | JWT (accessToken + refreshToken)   |
-| Mã hoá mật khẩu | bcryptjs                           |
-| Validation      | Zod                                |
-| API Docs        | Swagger UI + swagger-jsdoc         |
-| Bảo mật         | Helmet, CORS                       |
-| Logging         | Morgan                             |
+| Thành phần | Công nghệ |
+|---|---|
+| Runtime | Node.js ≥ 18 |
+| Framework | Express.js v5 |
+| Ngôn ngữ | TypeScript 5 |
+| ORM | Prisma 7 (`@prisma/adapter-pg`) |
+| Database | PostgreSQL ≥ 14 |
+| Xác thực | JWT (`jsonwebtoken`) · Google OAuth (`google-auth-library`) |
+| Mã hoá | bcryptjs |
+| Validation | Zod |
+| API Docs | Swagger UI · swagger-jsdoc |
+| Bảo mật | Helmet · CORS |
+| Logging | Morgan |
 
 ### Frontend
 
-| Thành phần | Công nghệ                 |
-|------------|---------------------------|
-| Framework  | React 19                  |
-| Ngôn ngữ   | TypeScript 6              |
-| Build tool | Vite 8                    |
-| Linting    | ESLint 9 + typescript-eslint |
+| Thành phần | Công nghệ |
+|---|---|
+| Framework | React 19 |
+| Ngôn ngữ | TypeScript 6 |
+| Build tool | Vite 8 |
+| Styling | Tailwind CSS v4 |
+| Routing | React Router DOM v7 |
+| HTTP client | Axios |
+| Google OAuth | @react-oauth/google |
+| State | React Context API |
+| Design system | Mastercard-inspired (xem `frontend/DESIGN.md`) |
 
 ---
 
@@ -66,52 +97,59 @@ e-commerce/
 e-commerce/
 ├── backend/
 │   ├── prisma/
-│   │   ├── schema.prisma       # Định nghĩa toàn bộ database schema
-│   │   └── seed.ts             # Seed dữ liệu ban đầu (roles, admin)
-│   ├── src/
-│   │   ├── config/
-│   │   │   ├── env.ts          # Đọc và validate biến môi trường
-│   │   │   ├── prisma.ts       # Khởi tạo Prisma client
-│   │   │   └── swagger.ts      # Cấu hình Swagger / OpenAPI
-│   │   ├── controllers/
-│   │   │   └── auth.controller.ts
-│   │   ├── dtos/
-│   │   │   └── auth.dto.ts     # Zod schemas cho request validation
-│   │   ├── middlewares/
-│   │   │   ├── auth.middleware.ts     # Xác thực JWT
-│   │   │   ├── error.middleware.ts    # Global error handler
-│   │   │   └── validate.middleware.ts # Zod request validator
-│   │   ├── routes/
-│   │   │   ├── auth.route.ts
-│   │   │   └── index.ts        # Mount tất cả routes + health check
-│   │   ├── services/
-│   │   │   └── auth.service.ts # Business logic
-│   │   ├── types/
-│   │   │   └── index.ts        # TypeScript type definitions
-│   │   ├── utils/
-│   │   │   ├── pagination.util.ts
-│   │   │   └── response.util.ts
-│   │   ├── app.ts              # Khởi tạo Express app
-│   │   └── server.ts           # Entry point
-│   ├── .env.example
-│   ├── nodemon.json
-│   ├── package.json
-│   ├── prisma.config.ts
-│   └── tsconfig.json
+│   │   ├── schema.prisma              # Database schema (models + enums)
+│   │   └── seed.ts                    # Seed roles và tài khoản admin
+│   └── src/
+│       ├── config/
+│       │   ├── env.ts                 # Đọc biến môi trường
+│       │   ├── prisma.ts              # Khởi tạo Prisma client
+│       │   └── swagger.ts             # Cấu hình Swagger / OpenAPI
+│       ├── controllers/
+│       │   ├── auth.controller.ts
+│       │   ├── category.controller.ts
+│       │   ├── product.controller.ts
+│       │   └── user.controller.ts
+│       ├── dtos/
+│       │   ├── auth.dto.ts            # Zod schemas: register, login, ...
+│       │   ├── category.dto.ts
+│       │   └── product.dto.ts
+│       ├── middlewares/
+│       │   ├── auth.middleware.ts     # JWT verification + role guard
+│       │   ├── error.middleware.ts    # Global error handler
+│       │   └── validate.middleware.ts # Zod request validator
+│       ├── routes/
+│       │   ├── auth.route.ts
+│       │   ├── category.route.ts
+│       │   ├── product.route.ts
+│       │   ├── user.route.ts
+│       │   └── index.ts              # Mount tất cả routes + health check
+│       ├── services/
+│       │   ├── auth.service.ts       # Business logic xác thực + Google OAuth
+│       │   ├── category.service.ts
+│       │   ├── product.service.ts
+│       │   └── user.service.ts
+│       ├── utils/
+│       │   ├── pagination.util.ts
+│       │   └── response.util.ts
+│       ├── app.ts                    # Khởi tạo Express app
+│       └── server.ts                 # Entry point
 │
 └── frontend/
-    ├── public/
-    │   ├── favicon.svg
-    │   └── icons.svg
-    ├── src/
-    │   ├── assets/
-    │   ├── App.tsx
-    │   ├── App.css
-    │   ├── main.tsx
-    │   └── index.css
-    ├── index.html
-    ├── vite.config.ts
-    └── package.json
+    └── src/
+        ├── context/
+        │   └── AuthContext.tsx       # Global auth state (React Context)
+        ├── pages/
+        │   └── auth/
+        │       ├── LoginPage.tsx     # Đăng nhập (email + Google)
+        │       └── RegisterPage.tsx  # Đăng ký
+        ├── services/
+        │   ├── api.ts                # Axios instance (base URL + auth header)
+        │   └── auth.service.ts       # Gọi API auth
+        ├── types/
+        │   └── auth.ts               # TypeScript types: User, TokenPair, ...
+        ├── App.tsx                   # Router + protected/guest routes
+        ├── main.tsx                  # Entry point + GoogleOAuthProvider
+        └── index.css                 # Tailwind v4 + design system tokens
 ```
 
 ---
@@ -120,40 +158,40 @@ e-commerce/
 
 ### Vai trò người dùng
 
-| Role       | Mô tả                               |
-|------------|-------------------------------------|
-| `CUSTOMER` | Khách hàng — mua hàng, đánh giá     |
-| `SELLER`   | Người bán — quản lý shop và sản phẩm |
-| `ADMIN`    | Quản trị viên hệ thống              |
+| Role | Mô tả |
+|---|---|
+| `CUSTOMER` | Khách hàng — duyệt sản phẩm, đặt hàng, đánh giá |
+| `SELLER` | Người bán — quản lý shop, sản phẩm, đơn hàng |
+| `ADMIN` | Quản trị viên hệ thống |
 
 ### Các model chính
 
-| Model            | Mô tả                                              |
-|------------------|----------------------------------------------------|
-| `User`           | Tài khoản người dùng                               |
-| `Account`        | Thông tin đăng nhập (LOCAL / GOOGLE / FACEBOOK)    |
-| `Role` / `UserRole` | Phân quyền người dùng                           |
-| `Category`       | Danh mục sản phẩm (hỗ trợ đa cấp)                 |
-| `Product`        | Sản phẩm (kèm ảnh, tồn kho, trạng thái)           |
-| `Cart` / `CartItem` | Giỏ hàng                                        |
-| `Order` / `OrderItem` | Đơn hàng                                     |
-| `Conversation` / `Message` | Chat giữa buyer và seller                |
-| `Review`         | Đánh giá sản phẩm (1–5 sao)                       |
-| `SellerProfile`  | Thông tin shop của seller                          |
-| `ShippingMethod` / `SellerShipping` | Phương thức vận chuyển            |
-| `ChatbotLog`     | Lịch sử hội thoại chatbot                         |
+| Model | Mô tả |
+|---|---|
+| `User` | Tài khoản người dùng (email unique) |
+| `Account` | Thông tin đăng nhập theo provider (`LOCAL` · `GOOGLE` · `FACEBOOK`) |
+| `Role` / `UserRole` | Phân quyền nhiều-nhiều |
+| `Category` | Danh mục sản phẩm (cây đa cấp, self-referencing) |
+| `Product` / `ProductImage` | Sản phẩm và ảnh sản phẩm |
+| `Cart` / `CartItem` | Giỏ hàng |
+| `Order` / `OrderItem` | Đơn hàng |
+| `Conversation` / `Message` | Chat giữa buyer và seller |
+| `Review` | Đánh giá sản phẩm (1–5 sao, unique per user+product) |
+| `SellerProfile` | Thông tin shop của seller |
+| `ShippingMethod` / `SellerShipping` | Phương thức vận chuyển |
+| `ChatbotLog` | Lịch sử hội thoại chatbot |
 
 ### Enums
 
-| Enum                 | Giá trị                                                        |
-|----------------------|----------------------------------------------------------------|
-| `AccountProvider`    | `LOCAL`, `GOOGLE`, `FACEBOOK`                                  |
-| `ProductStatus`      | `ACTIVE`, `INACTIVE`, `DELETED`                                |
-| `OrderStatus`        | `PENDING`, `CONFIRMED`, `PROCESSING`, `SHIPPED`, `DELIVERED`, `CANCELLED`, `REFUNDED` |
-| `PaymentMethod`      | `COD`, `BANK_TRANSFER`, `MOMO`, `VNPAY`, `CREDIT_CARD`        |
-| `PaymentStatus`      | `UNPAID`, `PAID`, `FAILED`, `REFUNDED`                         |
-| `MessageType`        | `TEXT`, `IMAGE`, `FILE`                                        |
-| `ShippingMethodName` | `FAST`, `EXPRESS`, `SAME_DAY`                                  |
+| Enum | Giá trị |
+|---|---|
+| `AccountProvider` | `LOCAL` · `GOOGLE` · `FACEBOOK` |
+| `ProductStatus` | `ACTIVE` · `INACTIVE` · `DELETED` |
+| `OrderStatus` | `PENDING` · `CONFIRMED` · `PROCESSING` · `SHIPPED` · `DELIVERED` · `CANCELLED` · `REFUNDED` |
+| `PaymentMethod` | `COD` · `BANK_TRANSFER` · `MOMO` · `VNPAY` · `CREDIT_CARD` |
+| `PaymentStatus` | `UNPAID` · `PAID` · `FAILED` · `REFUNDED` |
+| `MessageType` | `TEXT` · `IMAGE` · `FILE` |
+| `ShippingMethodName` | `FAST` · `EXPRESS` · `SAME_DAY` |
 
 ---
 
@@ -163,23 +201,51 @@ Base URL: `/api/v1`
 
 ### Hệ thống
 
-| Method | Endpoint  | Mô tả            |
-|--------|-----------|------------------|
-| GET    | `/health` | Kiểm tra trạng thái server |
+| Method | Endpoint | Mô tả |
+|---|---|---|
+| GET | `/health` | Kiểm tra trạng thái server |
 
 ### Auth (`/auth`)
 
-| Method | Endpoint             | Auth | Mô tả                          |
-|--------|----------------------|------|--------------------------------|
-| POST   | `/auth/register`     |      | Đăng ký tài khoản mới (role mặc định: CUSTOMER) |
-| POST   | `/auth/login`        |      | Đăng nhập, nhận `accessToken` + `refreshToken` |
-| POST   | `/auth/refresh`      |      | Làm mới access token           |
-| POST   | `/auth/logout`       | JWT  | Đăng xuất, thu hồi refresh token |
-| GET    | `/auth/profile`      | JWT  | Lấy thông tin cá nhân          |
-| PUT    | `/auth/profile`      | JWT  | Cập nhật tên, số điện thoại    |
-| PUT    | `/auth/change-password` | JWT | Đổi mật khẩu                 |
+| Method | Endpoint | Auth | Mô tả |
+|---|---|---|---|
+| POST | `/auth/register` | — | Đăng ký tài khoản (role mặc định: `CUSTOMER`) |
+| POST | `/auth/login` | — | Đăng nhập email/mật khẩu → `accessToken` + `refreshToken` |
+| POST | `/auth/google` | — | Đăng nhập Google → xác thực ID token → JWT |
+| POST | `/auth/refresh` | — | Làm mới access token bằng refresh token |
+| POST | `/auth/logout` | JWT | Đăng xuất, thu hồi refresh token |
+| GET | `/auth/profile` | JWT | Lấy thông tin cá nhân |
+| PUT | `/auth/profile` | JWT | Cập nhật tên, số điện thoại |
+| PUT | `/auth/change-password` | JWT | Đổi mật khẩu |
 
-> Tài liệu API đầy đủ: [http://localhost:5000/api/v1/docs](http://localhost:5000/api/v1/docs)
+### Users (`/users`)
+
+| Method | Endpoint | Auth | Mô tả |
+|---|---|---|---|
+| GET | `/users` | JWT · ADMIN | Danh sách người dùng (có phân trang) |
+
+### Categories (`/categories`)
+
+| Method | Endpoint | Auth | Mô tả |
+|---|---|---|---|
+| GET | `/categories` | — | Danh sách danh mục |
+| POST | `/categories` | JWT · ADMIN | Tạo danh mục mới |
+| PUT | `/categories/:id` | JWT · ADMIN | Cập nhật danh mục |
+| DELETE | `/categories/:id` | JWT · ADMIN | Xoá danh mục |
+
+### Products (`/products`)
+
+| Method | Endpoint | Auth | Mô tả |
+|---|---|---|---|
+| GET | `/products` | — | Danh sách sản phẩm (có phân trang, lọc) |
+| GET | `/products/:id` | — | Chi tiết sản phẩm |
+| POST | `/products` | JWT · SELLER | Tạo sản phẩm mới |
+| PUT | `/products/:id` | JWT · SELLER | Cập nhật sản phẩm |
+| DELETE | `/products/:id` | JWT · SELLER | Xoá sản phẩm |
+| POST | `/products/:id/images` | JWT · SELLER | Upload ảnh sản phẩm |
+| DELETE | `/products/:id/images/:imageId` | JWT · SELLER | Xoá ảnh sản phẩm |
+
+> Tài liệu API đầy đủ (Swagger UI): [http://localhost:5000/api/v1/docs](http://localhost:5000/api/v1/docs)
 
 ---
 
@@ -187,31 +253,43 @@ Base URL: `/api/v1`
 
 ### Yêu cầu
 
-- Node.js >= 18
-- PostgreSQL >= 14
-- npm hoặc yarn
+- **Node.js** >= 18
+- **PostgreSQL** >= 14
+- npm
 
-### 1. Clone và cài dependencies
+### 1. Clone repository
+
+```bash
+git clone <repo-url>
+cd e-commerce
+```
+
+### 2. Cài dependencies
+
+```bash
+# Backend
+cd backend && npm install
+
+# Frontend
+cd ../frontend && npm install
+```
+
+### 3. Cấu hình môi trường
 
 ```bash
 # Backend
 cd backend
-npm install
-
-# Frontend
-cd ../frontend
-npm install
+cp .env.example .env
+# Mở .env và điền thông tin database, secret, Google Client ID
 ```
-
-### 2. Cấu hình môi trường
 
 ```bash
-cd backend
-cp .env.example .env
-# Chỉnh sửa .env với thông tin database và secret của bạn
+# Frontend — tạo file .env
+cd frontend
+echo "VITE_GOOGLE_CLIENT_ID=your_google_client_id_here" > .env
 ```
 
-### 3. Khởi tạo database
+### 4. Khởi tạo database
 
 ```bash
 cd backend
@@ -223,23 +301,24 @@ npx prisma migrate dev
 npm run seed
 ```
 
-### 4. Chạy development
+### 5. Chạy development
 
 ```bash
-# Backend (cổng 5000)
+# Terminal 1 — Backend (http://localhost:5000)
 cd backend
 npm run dev
 
-# Frontend (cổng 5173)
+# Terminal 2 — Frontend (http://localhost:5173)
 cd frontend
 npm run dev
 ```
 
-### 5. Build production
+### 6. Build production
 
 ```bash
 # Backend
 cd backend
+npm run build
 npm run start:prod
 
 # Frontend
@@ -252,44 +331,82 @@ npm run preview
 
 ## Biến môi trường
 
-Tạo file `.env` trong thư mục `backend/` dựa trên `.env.example`:
+### Backend (`backend/.env`)
 
 ```env
-# Environment
+# App
 NODE_ENV=development
 PORT=5000
 
-# Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=ecommerce_db
-DB_USER=postgres
-DB_PASSWORD=your_password_here
+# PostgreSQL (Prisma)
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/ecommerce_db?schema=public"
 
-# Admin mặc định (dùng cho seed)
+# Tài khoản admin mặc định (dùng khi seed)
 ADMIN_NAME=Administrator
 ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=your_strong_admin_password
+ADMIN_PASSWORD=Admin@123456
 
 # JWT
-JWT_SECRET=your_jwt_secret_here
+JWT_SECRET=your_jwt_secret_here          # chuỗi ngẫu nhiên dài, giữ bí mật
 JWT_EXPIRES_IN=7d
 
-# CORS
+# CORS — danh sách origin cho phép, phân cách bằng dấu phẩy
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your_google_client_id_here
 ```
 
-| Biến                | Bắt buộc | Mô tả                                     |
-|---------------------|----------|-------------------------------------------|
-| `NODE_ENV`          | Có       | `development` hoặc `production`           |
-| `PORT`              | Có       | Cổng backend (mặc định: 5000)             |
-| `DB_HOST`           | Có       | Host PostgreSQL                           |
-| `DB_PORT`           | Có       | Cổng PostgreSQL (mặc định: 5432)          |
-| `DB_NAME`           | Có       | Tên database                              |
-| `DB_USER`           | Có       | User PostgreSQL                           |
-| `DB_PASSWORD`       | Có       | Mật khẩu PostgreSQL                       |
-| `JWT_SECRET`        | Có       | Khóa bí mật ký JWT (nên dùng chuỗi ngẫu nhiên dài) |
-| `JWT_EXPIRES_IN`    | Có       | Thời hạn access token (vd: `7d`, `1h`)   |
-| `ALLOWED_ORIGINS`   | Có       | Danh sách origin CORS, phân cách bằng dấu phẩy |
-| `ADMIN_EMAIL`       | Có       | Email tài khoản admin khi seed            |
-| `ADMIN_PASSWORD`    | Có       | Mật khẩu tài khoản admin khi seed        |
+| Biến | Bắt buộc | Mô tả |
+|---|---|---|
+| `DATABASE_URL` | Có | Connection string PostgreSQL (Prisma format) |
+| `JWT_SECRET` | Có | Khoá ký JWT — dùng chuỗi ngẫu nhiên ≥ 32 ký tự |
+| `JWT_EXPIRES_IN` | Có | Thời hạn access token (vd: `15m`, `1h`, `7d`) |
+| `ALLOWED_ORIGINS` | Có | Origins CORS được phép, phân cách bởi dấu phẩy |
+| `GOOGLE_CLIENT_ID` | Có | Client ID từ Google Cloud Console |
+| `ADMIN_EMAIL` | Có | Email tài khoản admin khi chạy seed |
+| `ADMIN_PASSWORD` | Có | Mật khẩu tài khoản admin khi chạy seed |
+| `PORT` | Không | Cổng backend (mặc định: `5000`) |
+
+### Frontend (`frontend/.env`)
+
+```env
+VITE_GOOGLE_CLIENT_ID=your_google_client_id_here
+```
+
+> `VITE_GOOGLE_CLIENT_ID` phải khớp với `GOOGLE_CLIENT_ID` ở backend và được đăng ký tại [Google Cloud Console](https://console.cloud.google.com/).
+
+---
+
+## Google OAuth — Thiết lập
+
+1. Truy cập [Google Cloud Console](https://console.cloud.google.com/) → tạo hoặc chọn project.
+2. Vào **APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID**.
+3. Chọn **Web application**.
+4. Thêm vào **Authorized JavaScript origins**:
+   - `http://localhost:5173` (development)
+5. Sao chép **Client ID** và điền vào cả `backend/.env` và `frontend/.env`.
+
+---
+
+## Luồng xác thực Google
+
+```
+Frontend                        Backend                       Google
+   |                               |                              |
+   |── click "Login with Google" ──>|                              |
+   |<──────── Google Popup ─────────────────────────────────────>|
+   |<──── credential (ID token) ──|                              |
+   |                               |                              |
+   |── POST /api/v1/auth/google ──>|                              |
+   |   { token: "<id_token>" }     |── verifyIdToken() ─────────>|
+   |                               |<── { email, name, sub } ────|
+   |                               |                              |
+   |                               |── find or create User in DB  |
+   |                               |── issue JWT + refreshToken   |
+   |                               |                              |
+   |<── { accessToken, user } ────|                              |
+   |                               |                              |
+   |── lưu token vào localStorage  |                              |
+   |── redirect đến trang chủ      |                              |
+```

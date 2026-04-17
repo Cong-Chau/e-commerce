@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import { OAuth2Client, type TokenPayload } from "google-auth-library";
 import prisma from "../config/prisma";
 import config from "../config/env";
 import { AppError } from "../middlewares/error.middleware";
@@ -167,13 +168,118 @@ export class AuthService {
 
   // ─── Logout ──────────────────────────────────────────────────
   async logout(userId: number) {
+    // Clear refresh tokens across all providers for this user
     await prisma.account.updateMany({
-      where: { user_id: userId, provider: "LOCAL" },
+      where: { user_id: userId },
       data: {
         refresh_token: null,
         refresh_token_expires_at: null,
       },
     });
+  }
+
+  // ─── Google Login ─────────────────────────────────────────────
+  async googleLogin(idToken: string) {
+    if (!config.google.clientId) {
+      throw new AppError("Google OAuth chưa được cấu hình", 500);
+    }
+
+    // 1. Verify ID token with Google
+    const client = new OAuth2Client(config.google.clientId);
+    let payload: TokenPayload | undefined;
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken,
+        audience: config.google.clientId,
+      });
+      payload = ticket.getPayload();
+    } catch {
+      throw new AppError("Token Google không hợp lệ", 401);
+    }
+
+    if (!payload?.email) {
+      throw new AppError("Không lấy được thông tin từ Google", 401);
+    }
+
+    const { sub: providerId, email, name } = payload;
+
+    // 2. Find or create user + Google account (transactional)
+    const { userId, googleAccountId } = await prisma.$transaction(async (tx: any) => {
+      // Already linked a Google account with this Google sub?
+      const existingGoogleAccount = await tx.account.findFirst({
+        where: { provider: "GOOGLE", provider_id: providerId },
+      });
+
+      if (existingGoogleAccount) {
+        return {
+          userId: existingGoogleAccount.user_id as number,
+          googleAccountId: existingGoogleAccount.id as number,
+        };
+      }
+
+      // Check user by email (could be an existing LOCAL user)
+      let uid: number;
+      const existingUser = await tx.user.findUnique({ where: { email } });
+
+      if (existingUser) {
+        uid = existingUser.id;
+      } else {
+        // Create new user
+        const newUser = await tx.user.create({
+          data: { name: name ?? email, email },
+        });
+        uid = newUser.id;
+
+        // Assign default CUSTOMER role
+        const customerRole = await tx.role.findUnique({
+          where: { name: RoleName.CUSTOMER },
+        });
+        if (customerRole) {
+          await tx.userRole.create({
+            data: { user_id: uid, role_id: customerRole.id },
+          });
+        }
+      }
+
+      // Link Google account to the user
+      const googleAccount = await tx.account.create({
+        data: {
+          user_id: uid,
+          provider: "GOOGLE",
+          provider_id: providerId,
+          is_verified: true,
+        },
+      });
+
+      return { userId: uid, googleAccountId: googleAccount.id as number };
+    });
+
+    // 3. Load user with roles
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { userRoles: { include: { role: true } } },
+    });
+
+    if (!user) throw new AppError("Không thể xác thực người dùng", 500);
+    if (user.status !== "ACTIVE") throw new AppError("Tài khoản đã bị khoá", 403);
+
+    // 4. Issue JWT + refresh token
+    const roles = user.userRoles.map((ur: any) => ur.role.name as string);
+    const accessToken = signAccessToken({ userId: user.id, email: user.email, roles });
+
+    const refreshToken = generateRefreshToken();
+    const expiresAt = new Date(Date.now() + config.refreshToken.expiresInMs);
+
+    await prisma.account.update({
+      where: { id: googleAccountId },
+      data: { refresh_token: refreshToken, refresh_token_expires_at: expiresAt },
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+      user: { id: user.id, name: user.name, email: user.email, roles },
+    };
   }
 
   // ─── Get Profile ─────────────────────────────────────────────

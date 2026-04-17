@@ -1,0 +1,373 @@
+/* ============================================================
+   Auth pages — Mastercard-inspired Design System
+   Canvas Cream (#F3F0EE), Ink Black (#141413), pill shapes
+   ============================================================ */
+
+/* ─── Layout ───────────────────────────────────────────────── */
+.authLayout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f3f0ee; /* Canvas Cream */
+  font-family: 'Sofia Sans', 'Inter', Arial, sans-serif;
+}
+
+/* ─── Decorative left panel ─────────────────────────────────── */
+.decorPanel {
+  flex: 1;
+  display: none;
+  position: relative;
+  background-color: #141413; /* Ink Black */
+  overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  .decorPanel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.decorContent {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px;
+  box-sizing: border-box;
+}
+
+/* Ghost watermark */
+.ghostText {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 160px;
+  font-weight: 500;
+  letter-spacing: -3.2px;
+  color: rgba(243, 240, 238, 0.05); /* Cream ghost on black */
+  user-select: none;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Circular portrait */
+.decorCircle {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2a2a28 0%, #1a1a18 100%);
+  border: 1px solid rgba(243, 240, 238, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 72px;
+  z-index: 2;
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 70px 110px 0px;
+}
+
+/* Satellite CTA — white circle docked at bottom-right */
+.satellite {
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #141413;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 600;
+  box-shadow: rgba(0, 0, 0, 0.08) 0px 8px 24px 0px;
+  cursor: default;
+}
+
+/* Orbital arc (decorative) */
+.orbitArc {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(243, 115, 56, 0.25); /* Light Signal Orange */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.orbitCircle {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  border: 1px solid rgba(243, 115, 56, 0.1);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.decorTagline {
+  margin-top: 40px;
+  font-size: 16px;
+  font-weight: 450;
+  line-height: 1.6;
+  color: rgba(243, 240, 238, 0.6); /* Muted cream */
+  text-align: center;
+  max-width: 320px;
+  z-index: 2;
+}
+
+/* ─── Form panel ─────────────────────────────────────────────── */
+.formPanel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  box-sizing: border-box;
+}
+
+.formCard {
+  width: 100%;
+  max-width: 440px;
+}
+
+/* ─── Eyebrow label ──────────────────────────────────────────── */
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.56px;
+  text-transform: uppercase;
+  color: #141413;
+  margin-bottom: 20px;
+}
+
+.eyebrowDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #f37338; /* Light Signal Orange */
+  flex-shrink: 0;
+}
+
+/* ─── Headings ───────────────────────────────────────────────── */
+.formTitle {
+  font-size: 40px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.8px;
+  color: #141413;
+  margin: 0 0 12px;
+}
+
+.formSubtitle {
+  font-size: 16px;
+  font-weight: 450;
+  line-height: 1.5;
+  color: #696969; /* Slate Gray */
+  margin: 0 0 40px;
+}
+
+/* ─── Form ───────────────────────────────────────────────────── */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #141413;
+  letter-spacing: 0.14px;
+}
+
+.inputWrapper {
+  position: relative;
+}
+
+.input {
+  width: 100%;
+  padding: 14px 20px;
+  border: 1.5px solid rgba(20, 20, 19, 0.2);
+  border-radius: 999px; /* Full pill */
+  background-color: #ffffff;
+  color: #141413;
+  font-size: 16px;
+  font-family: inherit;
+  font-weight: 450;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.input::placeholder {
+  color: #d1cdc7; /* Dust Taupe */
+}
+
+.input:focus {
+  border-color: #141413;
+}
+
+.inputWrapper .input {
+  padding-right: 52px;
+}
+
+.togglePassword {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  color: #696969;
+}
+
+/* ─── Role selector ──────────────────────────────────────────── */
+.roleGroup {
+  display: flex;
+  gap: 12px;
+}
+
+.roleBtn {
+  flex: 1;
+  padding: 12px 20px;
+  border: 1.5px solid rgba(20, 20, 19, 0.2);
+  border-radius: 20px; /* Medium-large per design system */
+  background-color: #ffffff;
+  color: #141413;
+  font-size: 15px;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.roleBtn:hover {
+  border-color: #141413;
+}
+
+.roleActive {
+  border-color: #141413;
+  background-color: #141413;
+  color: #f3f0ee; /* Canvas Cream text */
+}
+
+/* ─── Error ──────────────────────────────────────────────────── */
+.errorMsg {
+  font-size: 14px;
+  font-weight: 500;
+  color: #cf4500; /* Signal Orange — semantic error */
+  background-color: rgba(207, 69, 0, 0.06);
+  border-radius: 20px;
+  padding: 10px 20px;
+  margin: 0;
+}
+
+/* ─── Primary CTA button ─────────────────────────────────────── */
+.btnPrimary {
+  padding: 16px 24px;
+  background-color: #141413; /* Ink Black */
+  color: #f3f0ee; /* Canvas Cream */
+  border: 1.5px solid #141413;
+  border-radius: 20px; /* Signature Mastercard button radius */
+  font-size: 16px;
+  font-family: inherit;
+  font-weight: 500;
+  letter-spacing: -0.32px;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.1s ease;
+  margin-top: 8px;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.btnPrimary:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.btnPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Divider ────────────────────────────────────────────────── */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 28px 0;
+  color: #d1cdc7; /* Dust Taupe */
+  font-size: 14px;
+  font-weight: 450;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: rgba(20, 20, 19, 0.12);
+}
+
+/* ─── Switch text / link ─────────────────────────────────────── */
+.switchText {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 450;
+  color: #696969;
+  margin: 0;
+}
+
+.link {
+  color: #141413;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: opacity 0.2s ease;
+}
+
+.link:hover {
+  opacity: 0.65;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .formTitle {
+    font-size: 32px;
+  }
+
+  .formPanel {
+    padding: 40px 20px;
+  }
+
+  .input {
+    padding: 13px 18px;
+  }
+}

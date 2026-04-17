@@ -30,6 +30,10 @@ const config = {
       process.env.ALLOWED_ORIGINS || "http://localhost:5000"
     ).split(","),
   },
+
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID || "",
+  },
 };
 
 export default config;

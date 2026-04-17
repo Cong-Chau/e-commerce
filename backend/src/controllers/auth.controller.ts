@@ -106,6 +106,22 @@ export const updateProfile = async (
   }
 };
 
+// ─── Google Auth ─────────────────────────────────────────────────────────────
+export const googleAuth = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const { token } = req.body as { token: string };
+    if (!token) throw new AppError("token là bắt buộc", 400);
+    const result = await authService.googleLogin(token);
+    sendSuccess(res, result, "Đăng nhập Google thành công");
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ─── Change Password ──────────────────────────────────────────────────────────
 export const changePassword = async (
   req: AuthRequest,
