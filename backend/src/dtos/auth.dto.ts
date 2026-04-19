@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-// ─── Register ─────────────────────────────────────────────────────────────────
+// ─── Send OTP ─────────────────────────────────────────────────────────────────
+export const SendOtpDto = z.object({
+  email: z.email("Email không hợp lệ"),
+});
+
+// ─── Register (with OTP) ──────────────────────────────────────────────────────
 export const RegisterDto = z.object({
   name: z
     .string()
@@ -8,6 +13,10 @@ export const RegisterDto = z.object({
     .max(100, "Tên không được vượt quá 100 ký tự"),
   email: z.email("Email không hợp lệ"),
   password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
+  otp: z
+    .string()
+    .length(6, "OTP phải có đúng 6 chữ số")
+    .regex(/^\d{6}$/, "OTP chỉ được chứa chữ số"),
   role: z.enum(["CUSTOMER", "SELLER"]).optional(),
 });
 
@@ -52,6 +61,7 @@ export const ChangePasswordDto = z
   });
 
 // ─── Inferred Types ───────────────────────────────────────────────────────────
+export type SendOtpInput = z.infer<typeof SendOtpDto>;
 export type RegisterInput = z.infer<typeof RegisterDto>;
 export type LoginInput = z.infer<typeof LoginDto>;
 export type RefreshInput = z.infer<typeof RefreshDto>;

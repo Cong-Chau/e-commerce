@@ -34,6 +34,11 @@ const config = {
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID || "",
   },
+
+  email: {
+    user: process.env.EMAIL_USER || "",
+    appPassword: process.env.EMAIL_APP_PASSWORD || "",
+  },
 };
 
 export default config;

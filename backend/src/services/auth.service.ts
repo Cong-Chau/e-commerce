@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -5,6 +6,7 @@ import { OAuth2Client, type TokenPayload } from "google-auth-library";
 import prisma from "../config/prisma";
 import config from "../config/env";
 import { AppError } from "../middlewares/error.middleware";
+import emailService from "./email.service";
 import type { UpdateProfileInput } from "../dtos/auth.dto";
 import { RoleName } from "@prisma/client";
 
@@ -29,18 +31,80 @@ function generateRefreshToken(): string {
 // ─── AuthService ──────────────────────────────────────────────────────────────
 
 export class AuthService {
-  // ─── Register ────────────────────────────────────────────────
+  // ─── Send OTP ─────────────────────────────────────────────────
+  async sendOtp(email: string) {
+    // Reject if email already registered
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) throw new AppError("Email này đã được đăng ký", 409);
+
+    // Generate & hash a 6-digit OTP
+    const otpPlain = String(Math.floor(100000 + Math.random() * 900000));
+    const otpHashed = await bcrypt.hash(otpPlain, 10);
+    const expiredAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    // Upsert: overwrite any existing OTP for this email
+    await prisma.otpCode.upsert({
+      where: { email },
+      update: {
+        otp: otpHashed,
+        expired_at: expiredAt,
+        attempt_count: 0,
+        created_at: new Date(),
+      },
+      create: {
+        email,
+        otp: otpHashed,
+        expired_at: expiredAt,
+      },
+    });
+
+    await emailService.sendOtpEmail(email, otpPlain);
+
+    return { message: "Mã OTP đã được gửi đến email của bạn" };
+  }
+
+  // ─── Register (OTP-verified) ──────────────────────────────────
   async register(
     name: string,
     email: string,
     password: string,
+    otp: string,
     role: RoleName = RoleName.CUSTOMER,
   ) {
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
-      throw new AppError("Email đã được sử dụng", 409);
+    // 1. Validate OTP record
+    const otpRecord = await prisma.otpCode.findUnique({ where: { email } });
+
+    if (!otpRecord) {
+      throw new AppError("OTP không tồn tại hoặc đã hết hạn", 400);
     }
 
+    if (otpRecord.expired_at < new Date()) {
+      await prisma.otpCode.delete({ where: { email } });
+      throw new AppError("OTP đã hết hạn. Vui lòng yêu cầu mã mới", 400);
+    }
+
+    if (otpRecord.attempt_count >= 5) {
+      throw new AppError(
+        "Vượt quá số lần thử cho phép. Vui lòng yêu cầu mã OTP mới",
+        429,
+      );
+    }
+
+    const isOtpValid = await bcrypt.compare(otp, otpRecord.otp);
+    if (!isOtpValid) {
+      await prisma.otpCode.update({
+        where: { email },
+        data: { attempt_count: { increment: 1 } },
+      });
+      const remaining = 4 - otpRecord.attempt_count;
+      throw new AppError(`OTP không hợp lệ. Còn ${remaining} lần thử`, 400);
+    }
+
+    // 2. Guard against race-condition duplicate registration
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) throw new AppError("Email đã được sử dụng", 409);
+
+    // 3. Create user atomically
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.$transaction(async (tx: any) => {
@@ -54,11 +118,10 @@ export class AuthService {
           username: email,
           password: hashedPassword,
           provider: "LOCAL",
-          is_verified: false,
+          is_verified: true, // OTP proved email ownership
         },
       });
 
-      // Gán role cho user
       const roleRecord = await tx.role.findUnique({ where: { name: role } });
       if (roleRecord) {
         await tx.userRole.create({
@@ -68,6 +131,9 @@ export class AuthService {
 
       return newUser;
     });
+
+    // 4. Delete consumed OTP
+    await prisma.otpCode.delete({ where: { email } });
 
     return { id: user.id, name: user.name, email: user.email };
   }
@@ -204,55 +270,57 @@ export class AuthService {
     const { sub: providerId, email, name } = payload;
 
     // 2. Find or create user + Google account (transactional)
-    const { userId, googleAccountId } = await prisma.$transaction(async (tx: any) => {
-      // Already linked a Google account with this Google sub?
-      const existingGoogleAccount = await tx.account.findFirst({
-        where: { provider: "GOOGLE", provider_id: providerId },
-      });
-
-      if (existingGoogleAccount) {
-        return {
-          userId: existingGoogleAccount.user_id as number,
-          googleAccountId: existingGoogleAccount.id as number,
-        };
-      }
-
-      // Check user by email (could be an existing LOCAL user)
-      let uid: number;
-      const existingUser = await tx.user.findUnique({ where: { email } });
-
-      if (existingUser) {
-        uid = existingUser.id;
-      } else {
-        // Create new user
-        const newUser = await tx.user.create({
-          data: { name: name ?? email, email },
+    const { userId, googleAccountId } = await prisma.$transaction(
+      async (tx: any) => {
+        // Already linked a Google account with this Google sub?
+        const existingGoogleAccount = await tx.account.findFirst({
+          where: { provider: "GOOGLE", provider_id: providerId },
         });
-        uid = newUser.id;
 
-        // Assign default CUSTOMER role
-        const customerRole = await tx.role.findUnique({
-          where: { name: RoleName.CUSTOMER },
-        });
-        if (customerRole) {
-          await tx.userRole.create({
-            data: { user_id: uid, role_id: customerRole.id },
-          });
+        if (existingGoogleAccount) {
+          return {
+            userId: existingGoogleAccount.user_id as number,
+            googleAccountId: existingGoogleAccount.id as number,
+          };
         }
-      }
 
-      // Link Google account to the user
-      const googleAccount = await tx.account.create({
-        data: {
-          user_id: uid,
-          provider: "GOOGLE",
-          provider_id: providerId,
-          is_verified: true,
-        },
-      });
+        // Check user by email (could be an existing LOCAL user)
+        let uid: number;
+        const existingUser = await tx.user.findUnique({ where: { email } });
 
-      return { userId: uid, googleAccountId: googleAccount.id as number };
-    });
+        if (existingUser) {
+          uid = existingUser.id;
+        } else {
+          // Create new user
+          const newUser = await tx.user.create({
+            data: { name: name ?? email, email },
+          });
+          uid = newUser.id;
+
+          // Assign default CUSTOMER role
+          const customerRole = await tx.role.findUnique({
+            where: { name: RoleName.CUSTOMER },
+          });
+          if (customerRole) {
+            await tx.userRole.create({
+              data: { user_id: uid, role_id: customerRole.id },
+            });
+          }
+        }
+
+        // Link Google account to the user
+        const googleAccount = await tx.account.create({
+          data: {
+            user_id: uid,
+            provider: "GOOGLE",
+            provider_id: providerId,
+            is_verified: true,
+          },
+        });
+
+        return { userId: uid, googleAccountId: googleAccount.id as number };
+      },
+    );
 
     // 3. Load user with roles
     const user = await prisma.user.findUnique({
@@ -261,18 +329,26 @@ export class AuthService {
     });
 
     if (!user) throw new AppError("Không thể xác thực người dùng", 500);
-    if (user.status !== "ACTIVE") throw new AppError("Tài khoản đã bị khoá", 403);
+    if (user.status !== "ACTIVE")
+      throw new AppError("Tài khoản đã bị khoá", 403);
 
     // 4. Issue JWT + refresh token
     const roles = user.userRoles.map((ur: any) => ur.role.name as string);
-    const accessToken = signAccessToken({ userId: user.id, email: user.email, roles });
+    const accessToken = signAccessToken({
+      userId: user.id,
+      email: user.email,
+      roles,
+    });
 
     const refreshToken = generateRefreshToken();
     const expiresAt = new Date(Date.now() + config.refreshToken.expiresInMs);
 
     await prisma.account.update({
       where: { id: googleAccountId },
-      data: { refresh_token: refreshToken, refresh_token_expires_at: expiresAt },
+      data: {
+        refresh_token: refreshToken,
+        refresh_token_expires_at: expiresAt,
+      },
     });
 
     return {

@@ -1,14 +1,14 @@
-import { Router } from 'express';
+import { Router } from "express";
 import {
   getCategories,
   getCategoriesAdmin,
   createCategory,
   updateCategory,
   deleteCategory,
-} from '../controllers/category.controller';
-import { authenticate, authorize } from '../middlewares/auth.middleware';
-import { validate } from '../middlewares/validate.middleware';
-import { CreateCategoryDto, UpdateCategoryDto } from '../dtos/category.dto';
+} from "../controllers/category.controller";
+import { authenticate, authorize } from "../middlewares/auth.middleware";
+import { validate } from "../middlewares/validate.middleware";
+import { CreateCategoryDto, UpdateCategoryDto } from "../dtos/category.dto";
 
 const router = Router();
 
@@ -52,7 +52,7 @@ const router = Router();
  *                       name: Phụ Kiện Điện Thoại
  *                       parent_id: 2
  */
-router.get('/', getCategories);
+router.get("/", getCategories);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /categories/admin
@@ -111,7 +111,7 @@ router.get('/', getCategories);
  *               success: false
  *               message: Bạn không có quyền thực hiện hành động này
  */
-router.get('/admin', authenticate, authorize('ADMIN'), getCategoriesAdmin);
+router.get("/admin", authenticate, authorize("ADMIN"), getCategoriesAdmin);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /categories
@@ -213,7 +213,13 @@ router.get('/admin', authenticate, authorize('ADMIN'), getCategoriesAdmin);
  *               success: false
  *               message: Danh mục cha không tồn tại
  */
-router.post('/', authenticate, authorize('ADMIN'), validate(CreateCategoryDto), createCategory);
+router.post(
+  "/",
+  authenticate,
+  authorize("ADMIN"),
+  validate(CreateCategoryDto),
+  createCategory,
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PUT /categories/:id
@@ -319,7 +325,13 @@ router.post('/', authenticate, authorize('ADMIN'), validate(CreateCategoryDto), 
  *                   success: false
  *                   message: Danh mục cha không tồn tại
  */
-router.put('/:id', authenticate, authorize('ADMIN'), validate(UpdateCategoryDto), updateCategory);
+router.put(
+  "/:id",
+  authenticate,
+  authorize("ADMIN"),
+  validate(UpdateCategoryDto),
+  updateCategory,
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DELETE /categories/:id
@@ -388,13 +400,13 @@ router.put('/:id', authenticate, authorize('ADMIN'), validate(UpdateCategoryDto)
  *                 summary: Danh mục còn sản phẩm
  *                 value:
  *                   success: false
- *                   message: Không thể xoá: danh mục đang có 42 sản phẩm
+ *                   message: Không thể xoá danh mục đang có 42 sản phẩm
  *               hasChildren:
  *                 summary: Danh mục còn danh mục con
  *                 value:
  *                   success: false
- *                   message: Không thể xoá: danh mục đang có 3 danh mục con
+ *                   message: Không thể xoá danh mục đang có 3 danh mục con
  */
-router.delete('/:id', authenticate, authorize('ADMIN'), deleteCategory);
+router.delete("/:id", authenticate, authorize("ADMIN"), deleteCategory);
 
 export default router;

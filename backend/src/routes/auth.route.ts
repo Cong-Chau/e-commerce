@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  sendOtp,
   register,
   login,
   refresh,
@@ -12,6 +13,7 @@ import {
 import { authenticate } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate.middleware';
 import {
+  SendOtpDto,
   RegisterDto,
   LoginDto,
   RefreshDto,
@@ -86,6 +88,37 @@ const router = Router();
  *               success: false
  *               message: Email đã được sử dụng
  */
+/**
+ * @openapi
+ * /auth/send-otp:
+ *   post:
+ *     tags:
+ *       - Auth
+ *     summary: Gửi mã OTP xác thực email
+ *     description: |
+ *       Tạo và gửi mã OTP 6 chữ số đến email để xác thực trước khi đăng ký.
+ *       - OTP có hiệu lực trong **5 phút**
+ *       - Tối đa **5 lần** nhập sai trước khi bị khoá
+ *       - Nếu đã có OTP cũ → tự động ghi đè
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: OTP đã được gửi
+ *       409:
+ *         description: Email đã được đăng ký
+ */
+router.post('/send-otp', validate(SendOtpDto), sendOtp);
+
 router.post('/register', validate(RegisterDto), register);
 
 /**

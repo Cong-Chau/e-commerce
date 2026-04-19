@@ -15,6 +15,7 @@ interface AuthContextValue extends AuthState {
     name: string;
     email: string;
     password: string;
+    otp: string;
     role?: 'CUSTOMER' | 'SELLER';
   }) => Promise<void>;
   logout: () => Promise<void>;
@@ -54,8 +55,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const result = await authService.login({ email, password });
+    // Lưu token VÀO localStorage TRƯỚC khi gọi getProfile,
+    // để interceptor dùng đúng token mới
+    localStorage.setItem('accessToken', result.accessToken);
+    localStorage.setItem('refreshToken', result.refreshToken);
     const user = await authService.getProfile();
-    _setSession(result.accessToken, result.refreshToken, user);
+    setState({ user, accessToken: result.accessToken, isLoading: false });
   };
 
   const loginWithGoogle = async (credential: string) => {
@@ -68,10 +73,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     name: string;
     email: string;
     password: string;
+    otp: string;
     role?: 'CUSTOMER' | 'SELLER';
   }) => {
+    // register() tạo user + xoá OTP — phải thành công trước
     await authService.register(data);
-    await login(data.email, data.password);
+    // Sau khi user đã tạo, login để lấy token
+    // Nếu bước này lỗi thì user vẫn tồn tại → không throw, redirect /login
+    try {
+      await login(data.email, data.password);
+    } catch {
+      // Auto-login thất bại nhưng tài khoản đã tạo thành công
+      throw new Error('__REGISTERED_LOGIN_FAILED__');
+    }
   };
 
   const logout = async () => {

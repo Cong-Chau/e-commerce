@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-import { ApiResponse } from '../types';
+import { Request, Response, NextFunction } from "express";
+import { ApiResponse } from "../types";
 
 export class AppError extends Error {
   statusCode: number;
@@ -17,13 +17,13 @@ export const errorHandler = (
   err: AppError | Error,
   _req: Request,
   res: Response,
-  _next: NextFunction
+  _next: NextFunction,
 ): void => {
   const statusCode = err instanceof AppError ? err.statusCode : 500;
-  const message = err.message || 'Internal Server Error';
+  const message = err.message || "Internal Server Error";
 
   // In stack trace ra console để debug, không trả về client
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === "development") {
     console.error(err.stack);
   }
 
@@ -38,7 +38,7 @@ export const errorHandler = (
 export const notFoundHandler = (
   req: Request,
   _res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   next(new AppError(`Route ${req.originalUrl} không tồn tại`, 404));
 };

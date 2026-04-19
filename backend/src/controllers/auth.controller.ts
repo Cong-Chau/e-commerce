@@ -5,12 +5,28 @@ import authService from "../services/auth.service";
 import { sendSuccess, sendCreated } from "../utils/response.util";
 import { AppError } from "../middlewares/error.middleware";
 import type {
+  SendOtpInput,
   RegisterInput,
   LoginInput,
   RefreshInput,
   UpdateProfileInput,
   ChangePasswordInput,
 } from "../dtos/auth.dto";
+
+// ─── Send OTP ─────────────────────────────────────────────────────────────────
+export const sendOtp = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const { email } = req.body as SendOtpInput;
+    const result = await authService.sendOtp(email);
+    sendSuccess(res, result, result.message);
+  } catch (err) {
+    next(err);
+  }
+};
 
 // ─── Register ─────────────────────────────────────────────────────────────────
 export const register = async (
@@ -19,8 +35,14 @@ export const register = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const { name, email, password, role } = req.body as RegisterInput;
-    const user = await authService.register(name, email, password, role as RoleName | undefined);
+    const { name, email, password, otp, role } = req.body as RegisterInput;
+    const user = await authService.register(
+      name,
+      email,
+      password,
+      otp,
+      role as RoleName | undefined,
+    );
     sendCreated(res, user, "Đăng ký tài khoản thành công");
   } catch (err) {
     next(err);
