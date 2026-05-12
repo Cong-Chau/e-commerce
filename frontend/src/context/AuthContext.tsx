@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useContext,
@@ -27,14 +28,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
     accessToken: localStorage.getItem('accessToken'),
-    isLoading: true,
+    isLoading: !!localStorage.getItem('accessToken'),
   });
 
   // Restore session on app start
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
-      setState((s) => ({ ...s, isLoading: false }));
       return;
     }
     authService
