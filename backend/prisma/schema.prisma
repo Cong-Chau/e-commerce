@@ -110,8 +110,8 @@ model Account {
 }
 
 model Role {
-  id        Int        @id @default(autoincrement())
-  name      RoleName   @unique
+  id   Int      @id @default(autoincrement())
+  name RoleName @unique
 
   userRoles UserRole[]
 
@@ -130,13 +130,14 @@ model UserRole {
 }
 
 model Category {
-  id        Int        @id @default(autoincrement())
+  id        Int    @id @default(autoincrement())
   name      String
   parent_id Int?
 
-  parent   Category?  @relation("CategoryChildren", fields: [parent_id], references: [id])
-  children Category[] @relation("CategoryChildren")
-  products Product[]
+  parent           Category?        @relation("CategoryChildren", fields: [parent_id], references: [id])
+  children         Category[]       @relation("CategoryChildren")
+  products         Product[]
+  sellerCategories SellerCategory[]
 
   @@map("categories")
 }
@@ -257,7 +258,7 @@ model Review {
   id         Int      @id @default(autoincrement())
   user_id    Int
   product_id Int
-  rating     Int      // 1–5
+  rating     Int // 1–5
   comment    String?
   created_at DateTime @default(now())
 
@@ -302,10 +303,22 @@ model SellerProfile {
   owner_phone      String?
   created_at       DateTime @default(now())
 
-  user            User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  sellerShippings SellerShipping[]
+  user             User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  sellerShippings  SellerShipping[]
+  sellerCategories SellerCategory[]
 
   @@map("seller_profiles")
+}
+
+model SellerCategory {
+  seller_id   Int
+  category_id Int
+
+  seller   SellerProfile @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  category Category      @relation(fields: [category_id], references: [id], onDelete: Cascade)
+
+  @@id([seller_id, category_id])
+  @@map("seller_categories")
 }
 
 model ShippingMethod {

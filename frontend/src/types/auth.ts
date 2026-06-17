@@ -6,7 +6,8 @@ export interface SellerProfile {
   pickup_address: string | null;
   owner_name: string | null;
   owner_phone: string | null;
-  shippings: string[];
+  shippings: ("FAST" | "EXPRESS" | "SAME_DAY")[];
+  categories: { id: number; name: string }[];
   created_at: string;
 }
 
@@ -16,16 +17,12 @@ export interface User {
   email: string;
   roles: ("CUSTOMER" | "SELLER" | "ADMIN")[];
   phone?: string | null;
+  status?: string;
+  created_at?: string;
   sellerProfile?: SellerProfile | null;
-}
-
-export interface TokenPair {
-  accessToken: string;
-  refreshToken: string;
 }
 
 export interface AuthState {
   user: User | null;
-  accessToken: string | null;
   isLoading: boolean;
 }

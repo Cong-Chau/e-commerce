@@ -1,5 +1,5 @@
 import api from './api';
-import type { TokenPair, User } from '../types/auth';
+import type { User } from '../types/auth';
 
 export const authService = {
   async sendOtp(email: string): Promise<void> {
@@ -17,9 +17,8 @@ export const authService = {
     return res.data.data;
   },
 
-  async login(data: { email: string; password: string }): Promise<TokenPair> {
-    const res = await api.post<{ data: TokenPair }>('/auth/login', data);
-    return res.data.data;
+  async login(data: { email: string; password: string }): Promise<void> {
+    await api.post('/auth/login', data);
   },
 
   async logout(): Promise<void> {
@@ -31,16 +30,12 @@ export const authService = {
     return res.data.data;
   },
 
-  async refresh(refreshToken: string): Promise<TokenPair> {
-    const res = await api.post<{ data: TokenPair }>('/auth/refresh', { refreshToken });
-    return res.data.data;
+  async refresh(): Promise<void> {
+    await api.post('/auth/refresh');
   },
 
-  async googleLogin(token: string): Promise<{ accessToken: string; refreshToken: string; user: User }> {
-    const res = await api.post<{ data: { accessToken: string; refreshToken: string; user: User } }>(
-      '/auth/google',
-      { token },
-    );
-    return res.data.data;
+  async googleLogin(token: string, role?: string): Promise<{ needsRole?: boolean }> {
+    const res = await api.post<{ data: { needsRole?: boolean } }>('/auth/google', { token, role });
+    return res.data.data ?? {};
   },
 };

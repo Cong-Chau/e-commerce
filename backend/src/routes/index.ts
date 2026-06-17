@@ -4,6 +4,7 @@ import userRoute from "./user.route";
 import categoryRoute from "./category.route";
 import productRoute from "./product.route";
 import sellerRoute from "./seller.route";
+import aiRoute from "./ai.route";
 
 const router = Router();
 
@@ -17,5 +18,6 @@ router.use("/users", userRoute);
 router.use("/categories", categoryRoute);
 router.use("/products", productRoute);
 router.use("/sellers", sellerRoute);
+router.use("/ai", aiRoute);
 
 export default router;

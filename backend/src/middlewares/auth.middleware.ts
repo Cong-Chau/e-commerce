@@ -17,12 +17,11 @@ export const authenticate = (
   _res: Response,
   next: NextFunction,
 ): void => {
-  const authHeader = req.headers["authorization"];
-  if (!authHeader?.startsWith("Bearer ")) {
+  const token = req.cookies?.accessToken;
+  if (!token) {
     return next(new AppError("Không có token xác thực", 401));
   }
 
-  const token = authHeader.split(" ")[1];
   try {
     const decoded = authService.verifyToken(token);
     req.user = decoded;

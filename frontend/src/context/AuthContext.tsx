@@ -11,7 +11,7 @@ import { authService } from '../services/auth.service';
 
 interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: (credential: string) => Promise<void>;
+  loginWithGoogle: (credential: string, role?: string) => Promise<{ needsRole: boolean }>;
   register: (data: {
     name: string;
     email: string;
@@ -20,6 +20,7 @@ interface AuthContextValue extends AuthState {
     role?: 'CUSTOMER' | 'SELLER';
   }) => Promise<void>;
   logout: () => Promise<void>;
+  refreshProfile: () => Promise<User>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -27,46 +28,30 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
-    accessToken: localStorage.getItem('accessToken'),
-    isLoading: !!localStorage.getItem('accessToken'),
+    isLoading: true,
   });
 
-  // Restore session on app start
+  // accessToken/refreshToken sống trong httpOnly cookie — server là nguồn sự thật duy nhất,
+  // nên luôn phải hỏi /auth/profile để biết có session hợp lệ hay không.
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      return;
-    }
     authService
       .getProfile()
-      .then((user) => setState({ user, accessToken: token, isLoading: false }))
-      .catch(() => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        setState({ user: null, accessToken: null, isLoading: false });
-      });
+      .then((user) => setState({ user, isLoading: false }))
+      .catch(() => setState({ user: null, isLoading: false }));
   }, []);
 
-  const _setSession = (accessToken: string, refreshToken: string, user: User) => {
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    setState({ user, accessToken, isLoading: false });
-  };
-
   const login = async (email: string, password: string) => {
-    const result = await authService.login({ email, password });
-    // Lưu token VÀO localStorage TRƯỚC khi gọi getProfile,
-    // để interceptor dùng đúng token mới
-    localStorage.setItem('accessToken', result.accessToken);
-    localStorage.setItem('refreshToken', result.refreshToken);
+    await authService.login({ email, password });
     const user = await authService.getProfile();
-    setState({ user, accessToken: result.accessToken, isLoading: false });
+    setState({ user, isLoading: false });
   };
 
-  const loginWithGoogle = async (credential: string) => {
-    const result = await authService.googleLogin(credential);
-    // Backend returns the full user object — no need for an extra /profile call
-    _setSession(result.accessToken, result.refreshToken, result.user);
+  const loginWithGoogle = async (credential: string, role?: string): Promise<{ needsRole: boolean }> => {
+    const result = await authService.googleLogin(credential, role);
+    if (result.needsRole) return { needsRole: true };
+    const user = await authService.getProfile();
+    setState({ user, isLoading: false });
+    return { needsRole: false };
   };
 
   const register = async (data: {
@@ -92,14 +77,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authService.logout();
     } finally {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      setState({ user: null, accessToken: null, isLoading: false });
+      setState({ user: null, isLoading: false });
     }
   };
 
+  const refreshProfile = async () => {
+    const user = await authService.getProfile();
+    setState({ user, isLoading: false });
+    return user;
+  };
+
   return (
-    <AuthContext.Provider value={{ ...state, login, loginWithGoogle, register, logout }}>
+    <AuthContext.Provider value={{ ...state, login, loginWithGoogle, register, logout, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

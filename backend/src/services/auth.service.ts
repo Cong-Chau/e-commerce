@@ -245,7 +245,7 @@ export class AuthService {
   }
 
   // ─── Google Login ─────────────────────────────────────────────
-  async googleLogin(idToken: string) {
+  async googleLogin(idToken: string, role?: string) {
     if (!config.google.clientId) {
       throw new AppError("Google OAuth chưa được cấu hình", 500);
     }
@@ -269,18 +269,29 @@ export class AuthService {
 
     const { sub: providerId, email, name } = payload;
 
-    // 2. Find or create user + Google account (transactional)
+    // 2. Check if this is a brand-new user that needs role selection
+    const existingGoogleAccount = await prisma.account.findFirst({
+      where: { provider: "GOOGLE", provider_id: providerId },
+    });
+    if (!existingGoogleAccount) {
+      const existingUserByEmail = await prisma.user.findUnique({ where: { email } });
+      if (!existingUserByEmail && !role) {
+        return { needsRole: true as const };
+      }
+    }
+
+    // 3. Find or create user + Google account (transactional)
     const { userId, googleAccountId } = await prisma.$transaction(
       async (tx: any) => {
         // Already linked a Google account with this Google sub?
-        const existingGoogleAccount = await tx.account.findFirst({
+        const linkedAccount = await tx.account.findFirst({
           where: { provider: "GOOGLE", provider_id: providerId },
         });
 
-        if (existingGoogleAccount) {
+        if (linkedAccount) {
           return {
-            userId: existingGoogleAccount.user_id as number,
-            googleAccountId: existingGoogleAccount.id as number,
+            userId: linkedAccount.user_id as number,
+            googleAccountId: linkedAccount.id as number,
           };
         }
 
@@ -291,19 +302,17 @@ export class AuthService {
         if (existingUser) {
           uid = existingUser.id;
         } else {
-          // Create new user
+          // Create new user with chosen role
+          const chosenRole = (role as RoleName) ?? RoleName.CUSTOMER;
           const newUser = await tx.user.create({
             data: { name: name ?? email, email },
           });
           uid = newUser.id;
 
-          // Assign default CUSTOMER role
-          const customerRole = await tx.role.findUnique({
-            where: { name: RoleName.CUSTOMER },
-          });
-          if (customerRole) {
+          const roleRecord = await tx.role.findUnique({ where: { name: chosenRole } });
+          if (roleRecord) {
             await tx.userRole.create({
-              data: { user_id: uid, role_id: customerRole.id },
+              data: { user_id: uid, role_id: roleRecord.id },
             });
           }
         }
@@ -364,7 +373,12 @@ export class AuthService {
       where: { id: userId },
       include: {
         userRoles: { include: { role: true } },
-        sellerProfile: true,
+        sellerProfile: {
+          include: {
+            sellerShippings: { include: { shipping: true } },
+            sellerCategories: { include: { category: true } },
+          },
+        },
       },
     });
 
@@ -375,8 +389,28 @@ export class AuthService {
       name: user.name,
       email: user.email,
       phone: user.phone,
+      status: user.status,
+      created_at: user.created_at,
       roles: user.userRoles.map((ur: any) => ur.role.name),
-      sellerProfile: user.sellerProfile,
+      sellerProfile: user.sellerProfile
+        ? {
+            id: user.sellerProfile.id,
+            shop_name: user.sellerProfile.shop_name,
+            shop_logo: user.sellerProfile.shop_logo,
+            shop_description: user.sellerProfile.shop_description,
+            pickup_address: user.sellerProfile.pickup_address,
+            owner_name: user.sellerProfile.owner_name,
+            owner_phone: user.sellerProfile.owner_phone,
+            shippings: user.sellerProfile.sellerShippings.map(
+              (ss) => ss.shipping.name,
+            ),
+            categories: user.sellerProfile.sellerCategories.map((sc) => ({
+              id: sc.category.id,
+              name: sc.category.name,
+            })),
+            created_at: user.sellerProfile.created_at,
+          }
+        : null,
     };
   }
 

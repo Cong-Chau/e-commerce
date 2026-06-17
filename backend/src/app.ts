@@ -2,6 +2,7 @@ import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import config from './config/env';
 import { swaggerSpec, swaggerUiOptions } from './config/swagger';
@@ -18,6 +19,7 @@ app.use(cors({ origin: config.cors.allowedOrigins, credentials: true }));
 app.use(morgan(config.env === 'production' ? 'combined' : 'dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // ─── Swagger UI ──────────────────────────────────────────────────
 app.use(

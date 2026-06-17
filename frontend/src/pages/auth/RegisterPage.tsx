@@ -111,7 +111,7 @@ export default function RegisterPage() {
 
   // ── Shared UI pieces ───────────────────────────────────────────
   const inputClass =
-    'w-full px-5 py-3.5 rounded-full border border-ink/20 bg-white text-ink text-base font-[450] outline-none focus:border-ink placeholder:text-dust transition-colors';
+    'w-full px-5 py-3.5 rounded-full border border-ink/20 bg-white text-ink text-base font-normal outline-none focus:border-ink placeholder:text-dust transition-colors';
 
   const errorEl = error && (
     <p className="text-sm font-medium text-signal bg-signal/6 rounded-btn px-5 py-2.5">
@@ -146,7 +146,7 @@ export default function RegisterPage() {
               <span className="w-1.5 h-1.5 rounded-full bg-signal-light shrink-0" />
               {step === 1 ? 'BƯỚC 1 / 2' : 'BƯỚC 2 / 2'}
             </p>
-            <p className="text-base font-[450] leading-relaxed text-canvas/50 max-w-xs">
+            <p className="text-base font-normal leading-relaxed text-canvas/50 max-w-xs">
               {step === 1
                 ? 'Nhập email để nhận mã xác thực OTP.'
                 : 'Nhập mã OTP và hoàn tất thông tin tài khoản.'}
@@ -189,7 +189,7 @@ export default function RegisterPage() {
               <h1 className="text-[40px] font-medium leading-none tracking-[-0.8px] text-ink mb-3">
                 Nhập email của bạn
               </h1>
-              <p className="text-base font-[450] text-slate mb-10">
+              <p className="text-base font-normal text-slate mb-10">
                 Chúng tôi sẽ gửi mã OTP 6 chữ số đến địa chỉ email này.
               </p>
 
@@ -232,7 +232,7 @@ export default function RegisterPage() {
               <h1 className="text-[40px] font-medium leading-none tracking-[-0.8px] text-ink mb-2">
                 Hoàn tất đăng ký
               </h1>
-              <p className="text-base font-[450] text-slate mb-8">
+              <p className="text-base font-normal text-slate mb-8">
                 Mã OTP đã gửi tới{' '}
                 <span className="font-medium text-ink">{email}</span>.
               </p>
@@ -262,7 +262,7 @@ export default function RegisterPage() {
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   required
                   autoComplete="one-time-code"
-                  className="w-full px-5 py-3.5 rounded-full border border-ink/20 bg-white text-ink text-2xl font-bold text-center tracking-[0.6em] outline-none focus:border-ink placeholder:text-dust placeholder:tracking-normal placeholder:text-base placeholder:font-[450] transition-colors"
+                  className="w-full px-5 py-3.5 rounded-full border border-ink/20 bg-white text-ink text-2xl font-bold text-center tracking-[0.6em] outline-none focus:border-ink placeholder:text-dust placeholder:tracking-normal placeholder:text-base placeholder:font-normal transition-colors"
                 />
                 {cooldown > 0 && (
                   <p className="mt-2 text-[12px] text-slate text-center">
@@ -301,7 +301,7 @@ export default function RegisterPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       autoComplete="new-password"
-                      className="w-full pl-5 pr-12 py-3.5 rounded-full border border-ink/20 bg-white text-ink text-base font-[450] outline-none focus:border-ink placeholder:text-dust transition-colors"
+                      className="w-full pl-5 pr-12 py-3.5 rounded-full border border-ink/20 bg-white text-ink text-base font-normal outline-none focus:border-ink placeholder:text-dust transition-colors"
                     />
                     <button
                       type="button"
@@ -362,12 +362,12 @@ export default function RegisterPage() {
           )}
 
           {/* Divider + switch */}
-          <div className="flex items-center gap-4 my-7 text-sm font-[450] text-dust">
+          <div className="flex items-center gap-4 my-7 text-sm font-normal text-dust">
             <span className="flex-1 h-px bg-ink/10" />
             hoặc
             <span className="flex-1 h-px bg-ink/10" />
           </div>
-          <p className="text-center text-[15px] font-[450] text-slate">
+          <p className="text-center text-[15px] font-normal text-slate">
             Đã có tài khoản?{' '}
             <Link to="/login" className="text-ink font-medium underline underline-offset-[3px] hover:opacity-60 transition-opacity">
               Đăng nhập

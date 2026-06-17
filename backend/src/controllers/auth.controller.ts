@@ -4,14 +4,43 @@ import { AuthRequest } from "../middlewares/auth.middleware";
 import authService from "../services/auth.service";
 import { sendSuccess, sendCreated } from "../utils/response.util";
 import { AppError } from "../middlewares/error.middleware";
+import config from "../config/env";
 import type {
   SendOtpInput,
   RegisterInput,
   LoginInput,
-  RefreshInput,
   UpdateProfileInput,
   ChangePasswordInput,
 } from "../dtos/auth.dto";
+
+const REFRESH_TOKEN_PATH = "/api/v1/auth";
+
+// ─── Cookie helpers ─────────────────────────────────────────────────────────
+function setAuthCookies(
+  res: Response,
+  accessToken: string,
+  refreshToken: string,
+): void {
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    secure: config.cookie.secure,
+    sameSite: config.cookie.sameSite,
+    maxAge: config.jwt.expiresInMs,
+    path: "/",
+  });
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: config.cookie.secure,
+    sameSite: config.cookie.sameSite,
+    maxAge: config.refreshToken.expiresInMs,
+    path: REFRESH_TOKEN_PATH,
+  });
+}
+
+function clearAuthCookies(res: Response): void {
+  res.clearCookie("accessToken", { path: "/" });
+  res.clearCookie("refreshToken", { path: REFRESH_TOKEN_PATH });
+}
 
 // ─── Send OTP ─────────────────────────────────────────────────────────────────
 export const sendOtp = async (
@@ -58,7 +87,8 @@ export const login = async (
   try {
     const { email, password } = req.body as LoginInput;
     const result = await authService.login(email, password);
-    sendSuccess(res, result, "Đăng nhập thành công");
+    setAuthCookies(res, result.accessToken, result.refreshToken);
+    sendSuccess(res, { user: result.user }, "Đăng nhập thành công");
   } catch (err) {
     next(err);
   }
@@ -71,9 +101,12 @@ export const refresh = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const { refreshToken } = req.body as RefreshInput;
-    const tokens = await authService.refresh(refreshToken);
-    sendSuccess(res, tokens, "Làm mới token thành công");
+    const token = req.cookies?.refreshToken;
+    if (!token) throw new AppError("Không có refresh token", 401);
+
+    const tokens = await authService.refresh(token);
+    setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+    sendSuccess(res, null, "Làm mới token thành công");
   } catch (err) {
     next(err);
   }
@@ -88,6 +121,7 @@ export const logout = async (
   try {
     if (!req.user) throw new AppError("Chưa xác thực", 401);
     await authService.logout(req.user.userId);
+    clearAuthCookies(res);
     sendSuccess(res, null, "Đăng xuất thành công");
   } catch (err) {
     next(err);
@@ -135,10 +169,15 @@ export const googleAuth = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const { token } = req.body as { token: string };
+    const { token, role } = req.body as { token: string; role?: string };
     if (!token) throw new AppError("token là bắt buộc", 400);
-    const result = await authService.googleLogin(token);
-    sendSuccess(res, result, "Đăng nhập Google thành công");
+    const result = await authService.googleLogin(token, role);
+    if ("needsRole" in result) {
+      sendSuccess(res, { needsRole: true }, "Cần chọn vai trò");
+      return;
+    }
+    setAuthCookies(res, result.accessToken, result.refreshToken);
+    sendSuccess(res, { user: result.user }, "Đăng nhập Google thành công");
   } catch (err) {
     next(err);
   }

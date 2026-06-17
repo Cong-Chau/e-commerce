@@ -1,30 +1,5 @@
 import { useState } from 'react';
-
-function IconStore() {
-  return (
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-    </svg>
-  );
-}
-
-function IconCheck() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-
-function IconArrow() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="5" y1="12" x2="19" y2="12" />
-      <polyline points="12 5 19 12 12 19" />
-    </svg>
-  );
-}
+import { ArrowRight, Check, Store } from 'lucide-react';
 
 const STEPS = [
   { label: 'Đặt tên shop & thêm logo' },
@@ -55,7 +30,7 @@ export default function SetupProfileBanner({ onSetup }: Props) {
 
           {/* Icon */}
           <div className="mb-6 inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-ink/5 dark:bg-[#F3F0EE]/5 text-ink dark:text-canvas">
-            <IconStore />
+            <Store size={48} strokeWidth={1.5} />
           </div>
 
           {/* Headline */}
@@ -71,7 +46,7 @@ export default function SetupProfileBanner({ onSetup }: Props) {
             {STEPS.map((step, i) => (
               <li key={i} className="flex items-center gap-3">
                 <span className="flex-shrink-0 w-6 h-6 rounded-full bg-ink/8 dark:bg-[#F3F0EE]/8 flex items-center justify-center text-ink dark:text-canvas">
-                  <IconCheck />
+                  <Check size={16} strokeWidth={2.5} />
                 </span>
                 <span className="text-sm text-ink dark:text-canvas">{step.label}</span>
               </li>
@@ -91,7 +66,7 @@ export default function SetupProfileBanner({ onSetup }: Props) {
               className="transition-transform duration-200"
               style={{ transform: hovered ? 'translateX(4px)' : 'translateX(0)' }}
             >
-              <IconArrow />
+              <ArrowRight size={16} strokeWidth={2} />
             </span>
           </button>
 

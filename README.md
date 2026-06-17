@@ -97,36 +97,44 @@ e-commerce/
 e-commerce/
 ├── backend/
 │   ├── prisma/
+│   │   ├── migrations/                # Lịch sử migration
 │   │   ├── schema.prisma              # Database schema (models + enums)
-│   │   └── seed.ts                    # Seed roles và tài khoản admin
+│   │   └── seed.ts                    # Seed roles + tài khoản admin
 │   └── src/
 │       ├── config/
-│       │   ├── env.ts                 # Đọc biến môi trường
+│       │   ├── env.ts                 # Đọc & validate biến môi trường
 │       │   ├── prisma.ts              # Khởi tạo Prisma client
 │       │   └── swagger.ts             # Cấu hình Swagger / OpenAPI
 │       ├── controllers/
+│       │   ├── ai.controller.ts       # Gợi ý mô tả shop bằng Gemini
 │       │   ├── auth.controller.ts
 │       │   ├── category.controller.ts
 │       │   ├── product.controller.ts
+│       │   ├── seller.controller.ts   # Tạo/xem hồ sơ shop + danh mục
 │       │   └── user.controller.ts
 │       ├── dtos/
 │       │   ├── auth.dto.ts            # Zod schemas: register, login, ...
 │       │   ├── category.dto.ts
-│       │   └── product.dto.ts
+│       │   ├── product.dto.ts
+│       │   └── seller.dto.ts
 │       ├── middlewares/
 │       │   ├── auth.middleware.ts     # JWT verification + role guard
 │       │   ├── error.middleware.ts    # Global error handler
 │       │   └── validate.middleware.ts # Zod request validator
 │       ├── routes/
+│       │   ├── ai.route.ts
 │       │   ├── auth.route.ts
 │       │   ├── category.route.ts
 │       │   ├── product.route.ts
+│       │   ├── seller.route.ts
 │       │   ├── user.route.ts
 │       │   └── index.ts              # Mount tất cả routes + health check
 │       ├── services/
+│       │   ├── ai.service.ts         # Google Gemini API
 │       │   ├── auth.service.ts       # Business logic xác thực + Google OAuth
 │       │   ├── category.service.ts
 │       │   ├── product.service.ts
+│       │   ├── seller.service.ts
 │       │   └── user.service.ts
 │       ├── utils/
 │       │   ├── pagination.util.ts
@@ -135,21 +143,49 @@ e-commerce/
 │       └── server.ts                 # Entry point
 │
 └── frontend/
+    ├── DESIGN.md                     # Design system (Mastercard-inspired)
     └── src/
+        ├── components/
+        │   ├── common/
+        │   │   └── SearchableSelect.tsx  # Dropdown với tìm kiếm fuzzy (Fuse.js)
+        │   ├── products/
+        │   │   ├── ProductCard.tsx
+        │   │   ├── ProductEmptyState.tsx
+        │   │   └── ProductSkeletonCard.tsx
+        │   └── seller/
+        │       ├── SellerSidebar.tsx
+        │       └── SetupProfileBanner.tsx
         ├── context/
-        │   └── AuthContext.tsx       # Global auth state (React Context)
+        │   ├── AuthContext.tsx        # Global auth state + actions
+        │   └── ThemeContext.tsx       # Dark / Light mode
         ├── pages/
-        │   └── auth/
-        │       ├── LoginPage.tsx     # Đăng nhập (email + Google)
-        │       └── RegisterPage.tsx  # Đăng ký
+        │   ├── auth/
+        │   │   ├── LoginPage.tsx      # Đăng nhập (email + Google)
+        │   │   └── RegisterPage.tsx   # Đăng ký
+        │   ├── dashboard/
+        │   │   ├── AdminDashboard.tsx
+        │   │   ├── CustomerDashboard.tsx
+        │   │   ├── SellerDashboard.tsx    # Layout shell (sidebar + outlet)
+        │   │   └── SellerProfilePage.tsx  # Tạo hồ sơ shop (multi-step form)
+        │   ├── products/
+        │   │   └── SellerProductPage.tsx  # Quản lý sản phẩm
+        │   └── ComingSoon.tsx
+        ├── router/
+        │   ├── AppRoutes.tsx          # Khai báo toàn bộ routes
+        │   └── RouteGuards.tsx        # GuestRoute · ProtectedRoute · RootRedirect
         ├── services/
-        │   ├── api.ts                # Axios instance (base URL + auth header)
-        │   └── auth.service.ts       # Gọi API auth
+        │   ├── address.service.ts     # Tỉnh / Xã (GHN API)
+        │   ├── api.ts                 # Axios instance + interceptors
+        │   ├── auth.service.ts
+        │   ├── category.service.ts
+        │   ├── cloudinary.service.ts  # Upload ảnh
+        │   ├── product.service.ts
+        │   └── seller.service.ts      # Hồ sơ shop + AI suggest
         ├── types/
-        │   └── auth.ts               # TypeScript types: User, TokenPair, ...
-        ├── App.tsx                   # Router + protected/guest routes
-        ├── main.tsx                  # Entry point + GoogleOAuthProvider
-        └── index.css                 # Tailwind v4 + design system tokens
+        │   └── auth.ts                # TypeScript types: User, SellerProfile, ...
+        ├── App.tsx
+        ├── main.tsx                   # Entry point + GoogleOAuthProvider
+        └── index.css                  # Tailwind v4 + design tokens
 ```
 
 ---
@@ -238,12 +274,27 @@ Base URL: `/api/v1`
 | Method | Endpoint | Auth | Mô tả |
 |---|---|---|---|
 | GET | `/products` | — | Danh sách sản phẩm (có phân trang, lọc) |
+| GET | `/products/me` | JWT · SELLER | Sản phẩm của shop đang đăng nhập |
 | GET | `/products/:id` | — | Chi tiết sản phẩm |
 | POST | `/products` | JWT · SELLER | Tạo sản phẩm mới |
 | PUT | `/products/:id` | JWT · SELLER | Cập nhật sản phẩm |
 | DELETE | `/products/:id` | JWT · SELLER | Xoá sản phẩm |
 | POST | `/products/:id/images` | JWT · SELLER | Upload ảnh sản phẩm |
 | DELETE | `/products/:id/images/:imageId` | JWT · SELLER | Xoá ảnh sản phẩm |
+
+### Sellers (`/sellers`)
+
+| Method | Endpoint | Auth | Mô tả |
+|---|---|---|---|
+| POST | `/sellers/me/profile` | JWT · SELLER | Tạo hồ sơ shop |
+| GET | `/sellers/me/categories` | JWT · SELLER | Danh mục của shop đang đăng nhập |
+| GET | `/sellers/:id/profile` | — | Thông tin shop theo ID |
+
+### AI (`/ai`)
+
+| Method | Endpoint | Auth | Mô tả |
+|---|---|---|---|
+| POST | `/ai/suggest-description` | JWT · SELLER | Gợi ý mô tả shop bằng Google Gemini |
 
 > Tài liệu API đầy đủ (Swagger UI): [http://localhost:5000/api/v1/docs](http://localhost:5000/api/v1/docs)
 
@@ -347,23 +398,35 @@ ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=Admin@123456
 
 # JWT
-JWT_SECRET=your_jwt_secret_here          # chuỗi ngẫu nhiên dài, giữ bí mật
-JWT_EXPIRES_IN=7d
+JWT_SECRET=your_jwt_secret_here
+JWT_EXPIRES_IN=15m
+REFRESH_TOKEN_EXPIRES_IN=30d
 
 # CORS — danh sách origin cho phép, phân cách bằng dấu phẩy
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
 
 # Google OAuth
 GOOGLE_CLIENT_ID=your_google_client_id_here
+
+# Google Gemini AI
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Nodemailer (Gmail App Password)
+EMAIL_USER=your_gmail@gmail.com
+EMAIL_APP_PASSWORD=your_app_password_here
 ```
 
 | Biến | Bắt buộc | Mô tả |
 |---|---|---|
 | `DATABASE_URL` | Có | Connection string PostgreSQL (Prisma format) |
-| `JWT_SECRET` | Có | Khoá ký JWT — dùng chuỗi ngẫu nhiên ≥ 32 ký tự |
-| `JWT_EXPIRES_IN` | Có | Thời hạn access token (vd: `15m`, `1h`, `7d`) |
+| `JWT_SECRET` | Có | Khoá ký JWT — chuỗi ngẫu nhiên ≥ 32 ký tự |
+| `JWT_EXPIRES_IN` | Có | Thời hạn access token (vd: `15m`, `1h`) |
+| `REFRESH_TOKEN_EXPIRES_IN` | Có | Thời hạn refresh token (vd: `7d`, `30d`) |
 | `ALLOWED_ORIGINS` | Có | Origins CORS được phép, phân cách bởi dấu phẩy |
 | `GOOGLE_CLIENT_ID` | Có | Client ID từ Google Cloud Console |
+| `GEMINI_API_KEY` | Không | API key từ [Google AI Studio](https://aistudio.google.com/apikey) — cần để dùng tính năng gợi ý mô tả AI |
+| `EMAIL_USER` | Không | Gmail dùng để gửi email OTP |
+| `EMAIL_APP_PASSWORD` | Không | Gmail App Password (không phải mật khẩu Gmail) |
 | `ADMIN_EMAIL` | Có | Email tài khoản admin khi chạy seed |
 | `ADMIN_PASSWORD` | Có | Mật khẩu tài khoản admin khi chạy seed |
 | `PORT` | Không | Cổng backend (mặc định: `5000`) |

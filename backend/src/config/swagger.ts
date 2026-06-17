@@ -102,16 +102,6 @@ const swaggerDefinition = {
           },
         },
       },
-      RefreshBody: {
-        type: 'object',
-        required: ['refreshToken'],
-        properties: {
-          refreshToken: {
-            type: 'string',
-            example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-          },
-        },
-      },
       UpdateProfileBody: {
         type: 'object',
         properties: {
@@ -135,12 +125,46 @@ const swaggerDefinition = {
       UserProfile: {
         type: 'object',
         properties: {
-          id: { type: 'string', format: 'uuid', example: 'a1b2c3d4-...' },
+          id: { type: 'integer', example: 1 },
           name: { type: 'string', example: 'Nguyễn Văn A' },
           email: { type: 'string', example: 'nguyenvana@example.com' },
           phone: { type: 'string', nullable: true, example: '0901234567' },
-          role: { type: 'string', enum: ['CUSTOMER', 'ADMIN'], example: 'CUSTOMER' },
-          createdAt: { type: 'string', format: 'date-time' },
+          status: { type: 'string', example: 'ACTIVE' },
+          created_at: { type: 'string', format: 'date-time' },
+          roles: {
+            type: 'array',
+            items: { type: 'string', enum: ['CUSTOMER', 'SELLER', 'ADMIN'] },
+            example: ['CUSTOMER'],
+          },
+          sellerProfile: {
+            type: 'object',
+            nullable: true,
+            properties: {
+              id: { type: 'integer', example: 1 },
+              shop_name: { type: 'string', example: 'Shop Của Tui' },
+              shop_logo: { type: 'string', nullable: true, example: 'https://example.com/logo.png' },
+              shop_description: { type: 'string', nullable: true, example: 'Chuyên bán đồ công nghệ' },
+              pickup_address: { type: 'string', nullable: true, example: '123 Đường ABC, Quận 1, TP.HCM' },
+              owner_name: { type: 'string', nullable: true, example: 'Nguyễn Văn Bán' },
+              owner_phone: { type: 'string', nullable: true, example: '0901234568' },
+              shippings: {
+                type: 'array',
+                items: { type: 'string', enum: ['FAST', 'EXPRESS', 'SAME_DAY'] },
+                example: ['FAST', 'EXPRESS'],
+              },
+              categories: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'integer', example: 28 },
+                    name: { type: 'string', example: 'Điện Thoại Di Động' },
+                  },
+                },
+              },
+              created_at: { type: 'string', format: 'date-time' },
+            },
+          },
         },
       },
       CreateCategoryBody: {
@@ -352,18 +376,35 @@ const swaggerDefinition = {
           totalPages: { type: 'integer', example: 2 },
         },
       },
-      TokenPair: {
+      SuggestDescriptionBody: {
         type: 'object',
+        required: ['shop_name'],
         properties: {
-          accessToken: {
+          shop_name: {
             type: 'string',
-            example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-          },
-          refreshToken: {
-            type: 'string',
-            example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+            minLength: 1,
+            example: 'Shop Thời Trang Hà My',
+            description: 'Tên shop — AI dùng để tạo mô tả phù hợp',
           },
         },
+      },
+      SuggestDescriptionResponse: {
+        allOf: [
+          { $ref: '#/components/schemas/SuccessResponse' },
+          {
+            properties: {
+              data: {
+                type: 'object',
+                properties: {
+                  description: {
+                    type: 'string',
+                    example: 'Shop Thời Trang Hà My chuyên cung cấp các mẫu thời trang nữ hiện đại, phong cách và chất lượng cao. Chúng tôi cam kết mang đến cho khách hàng trải nghiệm mua sắm tuyệt vời với dịch vụ tận tâm.',
+                  },
+                },
+              },
+            },
+          },
+        ],
       },
     },
     responses: {
@@ -399,6 +440,7 @@ const swaggerDefinition = {
     { name: 'Users',      description: 'Quản lý người dùng (chỉ dành cho ADMIN)' },
     { name: 'Categories', description: 'Danh mục sản phẩm' },
     { name: 'Products',   description: 'Quản lý sản phẩm' },
+    { name: 'AI',         description: 'Tính năng AI hỗ trợ seller (Google Gemini)' },
   ],
 };
 

@@ -16,7 +16,6 @@ import {
   SendOtpDto,
   RegisterDto,
   LoginDto,
-  RefreshDto,
   UpdateProfileDto,
   ChangePasswordDto,
 } from '../dtos/auth.dto';
@@ -128,7 +127,9 @@ router.post('/register', validate(RegisterDto), register);
  *     tags:
  *       - Auth
  *     summary: Đăng nhập bằng Google
- *     description: Xác thực Google ID token và trả về JWT của hệ thống.
+ *     description: |
+ *       Xác thực Google ID token. **accessToken** và **refreshToken** được set vào
+ *       httpOnly cookie trên response, không trả về trong body.
  *     requestBody:
  *       required: true
  *       content:
@@ -155,7 +156,9 @@ router.post('/google', googleAuth);
  *     tags:
  *       - Auth
  *     summary: Đăng nhập
- *     description: Xác thực người dùng và trả về cặp **accessToken** / **refreshToken**.
+ *     description: |
+ *       Xác thực người dùng. **accessToken** và **refreshToken** được set vào
+ *       httpOnly cookie trên response (không trả về trong body).
  *     requestBody:
  *       required: true
  *       content:
@@ -172,13 +175,19 @@ router.post('/google', googleAuth);
  *                 - $ref: '#/components/schemas/SuccessResponse'
  *               properties:
  *                 data:
- *                   $ref: '#/components/schemas/TokenPair'
+ *                   type: object
+ *                   properties:
+ *                     user:
+ *                       $ref: '#/components/schemas/UserProfile'
  *             example:
  *               success: true
  *               message: Đăng nhập thành công
  *               data:
- *                 accessToken: "eyJhbGci..."
- *                 refreshToken: "eyJhbGci..."
+ *                 user:
+ *                   id: 1
+ *                   name: "Nguyễn Văn A"
+ *                   email: "nguyenvana@example.com"
+ *                   roles: ["CUSTOMER"]
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -193,30 +202,17 @@ router.post('/login', validate(LoginDto), login);
  *     tags:
  *       - Auth
  *     summary: Làm mới access token
- *     description: Dùng **refreshToken** hợp lệ để lấy cặp token mới.
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/RefreshBody'
+ *     description: |
+ *       Dùng **refreshToken** httpOnly cookie (gửi tự động bởi browser) để lấy
+ *       cặp token mới. Không cần request body — cặp token mới được set lại
+ *       vào cookie trên response.
  *     responses:
  *       200:
  *         description: Làm mới token thành công
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/SuccessResponse'
- *               properties:
- *                 data:
- *                   $ref: '#/components/schemas/TokenPair'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
-router.post('/refresh', validate(RefreshDto), refresh);
+router.post('/refresh', refresh);
 
 // ─── Protected ────────────────────────────────────────────────
 
@@ -227,7 +223,7 @@ router.post('/refresh', validate(RefreshDto), refresh);
  *     tags:
  *       - Auth
  *     summary: Đăng xuất
- *     description: Thu hồi refresh token của người dùng hiện tại. Yêu cầu **Bearer Token**.
+ *     description: Thu hồi refresh token của người dùng hiện tại và xoá cookie accessToken/refreshToken.
  *     security:
  *       - BearerAuth: []
  *     responses:

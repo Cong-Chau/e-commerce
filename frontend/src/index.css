@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Sofia+Sans:ital,wght@0,1..1000;1,1..1000&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
@@ -15,7 +15,8 @@
   --color-signal-light: #F37338; /* Light Signal Orange — decorative arcs */
 
   /* ── Typography ── */
-  --font-sans: 'Sofia Sans', 'Inter', Arial, sans-serif;
+  /* Sofia Sans mis-renders Vietnamese tone marks (floating/misplaced dấu) — Be Vietnam Pro has correct Vietnamese glyph shaping */
+  --font-sans: 'Be Vietnam Pro', 'Inter', Arial, sans-serif;
 
   /* ── Radius scale (Mastercard: no in-between 8-16px) ── */
   --radius-btn:  20px;   /* primary / secondary buttons */
@@ -36,8 +37,8 @@ body {
   margin: 0;
   background-color: #F3F0EE;
   color: #141413;
-  font-family: 'Sofia Sans', 'Inter', Arial, sans-serif;
-  font-weight: 450;
+  font-family: 'Be Vietnam Pro', 'Inter', Arial, sans-serif;
+  font-weight: 400;
   line-height: 1.4;
 }
 

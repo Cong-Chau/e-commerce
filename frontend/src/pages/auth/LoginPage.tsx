@@ -4,6 +4,8 @@ import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 
+type Role = 'CUSTOMER' | 'SELLER';
+
 export default function LoginPage() {
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
@@ -14,6 +16,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const [pendingCredential, setPendingCredential] = useState<string | null>(null);
+  const [selectedRole, setSelectedRole] = useState<Role>('CUSTOMER');
 
   const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
@@ -38,7 +43,12 @@ export default function LoginPage() {
     setError('');
     setGoogleLoading(true);
     try {
-      await loginWithGoogle(credentialResponse.credential);
+      const result = await loginWithGoogle(credentialResponse.credential);
+      if (result.needsRole) {
+        setPendingCredential(credentialResponse.credential);
+        setGoogleLoading(false);
+        return;
+      }
       navigate('/');
     } catch (err) {
       if (axios.isAxiosError(err)) {
@@ -51,8 +61,98 @@ export default function LoginPage() {
     }
   };
 
+  const handleConfirmRole = async () => {
+    if (!pendingCredential) return;
+    setGoogleLoading(true);
+    setError('');
+    try {
+      await loginWithGoogle(pendingCredential, selectedRole);
+      navigate('/');
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message ?? 'Đăng nhập Google thất bại');
+      } else {
+        setError('Đăng nhập Google thất bại, vui lòng thử lại');
+      }
+      setPendingCredential(null);
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-canvas font-sans">
+
+      {/* ── Role selection overlay (new Google users only) ── */}
+      {pendingCredential && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm bg-canvas rounded-3xl p-8 shadow-2xl">
+            <div className="flex items-center gap-2 text-[13px] font-bold tracking-[0.52px] uppercase text-ink mb-4">
+              <span className="w-1.5 h-1.5 rounded-full bg-signal-light shrink-0" />
+              CHỌN VAI TRÒ
+            </div>
+            <h2 className="text-2xl font-medium tracking-[-0.5px] text-ink mb-2">
+              Bạn muốn dùng tài khoản này để làm gì?
+            </h2>
+            <p className="text-sm text-slate mb-6">
+              Lựa chọn này không thể thay đổi sau khi tạo tài khoản.
+            </p>
+
+            <div className="flex flex-col gap-3 mb-6">
+              {(['CUSTOMER', 'SELLER'] as Role[]).map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setSelectedRole(r)}
+                  className={`w-full py-4 px-5 rounded-2xl border-[1.5px] text-left transition-colors ${
+                    selectedRole === r
+                      ? 'bg-ink text-canvas border-ink'
+                      : 'bg-white text-ink border-ink/20 hover:border-ink'
+                  }`}
+                >
+                  <p className="font-medium text-[15px]">
+                    {r === 'CUSTOMER' ? 'Khách hàng' : 'Người bán'}
+                  </p>
+                  <p className={`text-[13px] mt-0.5 ${selectedRole === r ? 'text-canvas/60' : 'text-slate'}`}>
+                    {r === 'CUSTOMER'
+                      ? 'Mua sắm và theo dõi đơn hàng'
+                      : 'Đăng bán sản phẩm và quản lý cửa hàng'}
+                  </p>
+                </button>
+              ))}
+            </div>
+
+            {error && (
+              <p className="text-sm font-medium text-signal bg-signal/6 rounded-btn px-5 py-2.5 mb-4">
+                {error}
+              </p>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => { setPendingCredential(null); setError(''); }}
+                className="flex-none py-3 px-5 bg-white text-ink border-[1.5px] border-ink/20 rounded-[20px] text-sm font-medium hover:border-ink transition-colors"
+              >
+                Huỷ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmRole}
+                disabled={googleLoading}
+                className="flex-1 py-3 bg-ink text-canvas rounded-[20px] text-sm font-medium hover:opacity-85 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {googleLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-3.5 h-3.5 border-2 border-canvas/30 border-t-canvas rounded-full animate-spin" />
+                    Đang tạo tài khoản…
+                  </span>
+                ) : 'Xác nhận'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Decorative left panel (desktop only) ── */}
       <div className="hidden lg:flex flex-1 relative bg-ink overflow-hidden items-center justify-center">
@@ -88,7 +188,7 @@ export default function LoginPage() {
               <span className="w-1.5 h-1.5 rounded-full bg-signal-light flex-shrink-0" />
               WELCOME BACK
             </p>
-            <p className="text-base font-[450] leading-relaxed text-canvas/50 max-w-xs">
+            <p className="text-base font-normal leading-relaxed text-canvas/50 max-w-xs">
               Khám phá hàng ngàn sản phẩm chất lượng, giao hàng tận nơi.
             </p>
           </div>
@@ -109,7 +209,7 @@ export default function LoginPage() {
           <h1 className="text-[40px] font-medium leading-none tracking-[-0.8px] text-ink mb-3">
             Chào mừng trở lại
           </h1>
-          <p className="text-base font-[450] text-slate mb-10">
+          <p className="text-base font-normal text-slate mb-10">
             Đăng nhập để tiếp tục mua sắm và quản lý đơn hàng của bạn.
           </p>
 
@@ -129,7 +229,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="w-full px-5 py-[14px] rounded-full border border-ink/20 bg-white text-ink text-base font-[450] outline-none focus:border-ink placeholder:text-dust transition-colors"
+                className="w-full px-5 py-[14px] rounded-full border border-ink/20 bg-white text-ink text-base font-normal outline-none focus:border-ink placeholder:text-dust transition-colors"
               />
             </div>
 
@@ -147,7 +247,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  className="w-full pl-5 pr-12 py-[14px] rounded-full border border-ink/20 bg-white text-ink text-base font-[450] outline-none focus:border-ink placeholder:text-dust transition-colors"
+                  className="w-full pl-5 pr-12 py-[14px] rounded-full border border-ink/20 bg-white text-ink text-base font-normal outline-none focus:border-ink placeholder:text-dust transition-colors"
                 />
                 <button
                   type="button"
@@ -178,7 +278,7 @@ export default function LoginPage() {
           </form>
 
           {/* Divider */}
-          <div className="flex items-center gap-4 my-7 text-sm font-[450] text-dust">
+          <div className="flex items-center gap-4 my-7 text-sm font-normal text-dust">
             <span className="flex-1 h-px bg-ink/10" />
             hoặc
             <span className="flex-1 h-px bg-ink/10" />
@@ -207,7 +307,7 @@ export default function LoginPage() {
           </div>
 
           {/* Switch */}
-          <p className="text-center text-[15px] font-[450] text-slate mt-7">
+          <p className="text-center text-[15px] font-normal text-slate mt-7">
             Chưa có tài khoản?{' '}
             <Link to="/register" className="text-ink font-medium underline underline-offset-[3px] hover:opacity-60 transition-opacity">
               Đăng ký ngay

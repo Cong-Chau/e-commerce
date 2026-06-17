@@ -26,11 +26,6 @@ export const LoginDto = z.object({
   password: z.string().min(1, "Mật khẩu không được để trống"),
 });
 
-// ─── Refresh Token ────────────────────────────────────────────────────────────
-export const RefreshDto = z.object({
-  refreshToken: z.string().min(1, "refreshToken không hợp lệ"),
-});
-
 // ─── Update Profile ───────────────────────────────────────────────────────────
 export const UpdateProfileDto = z
   .object({
@@ -64,6 +59,5 @@ export const ChangePasswordDto = z
 export type SendOtpInput = z.infer<typeof SendOtpDto>;
 export type RegisterInput = z.infer<typeof RegisterDto>;
 export type LoginInput = z.infer<typeof LoginDto>;
-export type RefreshInput = z.infer<typeof RefreshDto>;
 export type UpdateProfileInput = z.infer<typeof UpdateProfileDto>;
 export type ChangePasswordInput = z.infer<typeof ChangePasswordDto>;
