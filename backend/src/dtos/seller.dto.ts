@@ -22,3 +22,29 @@ export const CreateSellerProfileDto = z.object({
 });
 
 export type CreateSellerProfileInput = z.infer<typeof CreateSellerProfileDto>;
+
+export const UpdateSellerLogoDto = z.object({
+  shop_logo: z.url("URL logo không hợp lệ"),
+});
+export type UpdateSellerLogoInput = z.infer<typeof UpdateSellerLogoDto>;
+
+export const UpdateSellerProfileDto = z.object({
+  shop_name: z.string().trim().min(2, "Tên shop tối thiểu 2 ký tự").max(255).optional(),
+  shop_description: z.string().trim().max(1000).optional(),
+  pickup_address: z.string().trim().max(500).optional(),
+  owner_name: z.string().trim().max(255).optional(),
+  owner_phone: z.string().trim().max(20).optional(),
+  shippings: z
+    .array(z.enum(["FAST", "EXPRESS", "SAME_DAY"]))
+    .refine((items) => new Set(items).size === items.length, {
+      message: "Phương thức vận chuyển bị trùng",
+    })
+    .optional(),
+  category_ids: z
+    .array(z.number().int().positive())
+    .refine((items) => new Set(items).size === items.length, {
+      message: "Danh mục bị trùng",
+    })
+    .optional(),
+});
+export type UpdateSellerProfileInput = z.infer<typeof UpdateSellerProfileDto>;

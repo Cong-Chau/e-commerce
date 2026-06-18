@@ -16,11 +16,21 @@ export const UpdateProductImagesDto = z.object({
 export const MyProductsQueryDto = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(10),
-  status: z.enum(["ACTIVE", "INACTIVE", "DELETED"]).optional(),
+  status: z.enum(["ACTIVE", "INACTIVE", "OUT_OF_STOCK", "DELETED"]).optional(),
   category_id: z.coerce.number().int().positive().optional(),
   search: z.string().trim().optional(),
 });
 
+export const UpdateProductDto = z.object({
+  name:        z.string().min(2, "Tên sản phẩm tối thiểu 2 ký tự").max(255).optional(),
+  description: z.string().optional(),
+  price:       z.number().positive("Giá phải lớn hơn 0").optional(),
+  stock:       z.number().int().min(0, "Số lượng không âm").optional(),
+  status:      z.enum(["ACTIVE", "INACTIVE", "OUT_OF_STOCK"]).optional(),
+  category_id: z.number().int().positive("category_id không hợp lệ").optional(),
+});
+
 export type UpdateProductImagesInput = z.infer<typeof UpdateProductImagesDto>;
-export type CreateProductInput = z.infer<typeof CreateProductDto>;
-export type MyProductsQuery = z.infer<typeof MyProductsQueryDto>;
+export type CreateProductInput       = z.infer<typeof CreateProductDto>;
+export type UpdateProductInput       = z.infer<typeof UpdateProductDto>;
+export type MyProductsQuery          = z.infer<typeof MyProductsQueryDto>;

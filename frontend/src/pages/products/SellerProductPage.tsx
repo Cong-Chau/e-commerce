@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
-import { Search, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { useToast } from "../../hooks/useToast";
+import { useNavigate } from "react-router-dom";
+import {
+  Search,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  FileSpreadsheet,
+  Loader2,
+} from "lucide-react";
 import {
   productService,
   type ProductItem,
@@ -22,6 +31,8 @@ const STATUS_TABS: { value: ProductStatus | ""; label: string }[] = [
 ];
 
 export default function SellerProductPage() {
+  const navigate = useNavigate();
+  const toast = useToast();
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -33,12 +44,19 @@ export default function SellerProductPage() {
   const [searchInput, setSearchInput] = useState("");
   const [status, setStatus] = useState<ProductStatus | "">("");
   const [categoryId, setCategoryId] = useState<number | null>(null);
-  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>(
+    [],
+  );
 
   const [refreshKey, setRefreshKey] = useState(0);
+  const [confirmItem, setConfirmItem] = useState<ProductItem | null>(null);
+  const [toggling, setToggling] = useState(false);
 
   useEffect(() => {
-    sellerService.getMyCategories().then(setCategories).catch(() => {});
+    sellerService
+      .getMyCategories()
+      .then(setCategories)
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -66,14 +84,49 @@ export default function SellerProductPage() {
     };
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [page, status, categoryId, search, refreshKey]);
 
-  const handleStatusTab = (v: ProductStatus | "") => { setStatus(v); setPage(1); };
-  const handleCategoryChange = (v: number) => { setCategoryId(v); setPage(1); };
-  const handleSearch = () => { setSearch(searchInput.trim()); setPage(1); };
+  const handleStatusTab = (v: ProductStatus | "") => {
+    setStatus(v);
+    setPage(1);
+  };
+  const handleCategoryChange = (v: number) => {
+    setCategoryId(v);
+    setPage(1);
+  };
+  const handleSearch = () => {
+    setSearch(searchInput.trim());
+    setPage(1);
+  };
   const clearFilters = () => {
-    setSearch(""); setSearchInput(""); setStatus(""); setCategoryId(null); setPage(1);
+    setSearch("");
+    setSearchInput("");
+    setStatus("");
+    setCategoryId(null);
+    setPage(1);
+  };
+
+  const handleConfirmToggle = async () => {
+    if (!confirmItem) return;
+    const wasActive = confirmItem.status === "ACTIVE";
+    setToggling(true);
+    try {
+      const result = await productService.toggleProductStatus(confirmItem.id);
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === result.id ? { ...p, status: result.status } : p,
+        ),
+      );
+      setConfirmItem(null);
+      toast.success(wasActive ? "Đã ngừng bán sản phẩm." : "Đã bật bán lại sản phẩm.");
+    } catch {
+      toast.error("Thao tác thất bại, thử lại sau.");
+    } finally {
+      setToggling(false);
+    }
   };
 
   const hasFilter = !!(search || status || categoryId);
@@ -82,7 +135,6 @@ export default function SellerProductPage() {
 
   return (
     <div className="flex flex-col h-full">
-
       {/* ── Header ── */}
       <div className="px-8 pt-8 pb-0">
         <div className="flex items-start justify-between gap-4">
@@ -95,10 +147,22 @@ export default function SellerProductPage() {
             </p>
           </div>
 
-          <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[20px] bg-ink dark:bg-canvas text-canvas dark:text-ink text-sm font-semibold hover:opacity-85 active:scale-[0.97] transition-all shrink-0">
-            <Plus size={15} strokeWidth={2.5} />
-            Thêm sản phẩm
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => navigate("/seller/inventory/import")}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-btn border border-ink/15 dark:border-canvas/15 text-sm font-medium text-ink dark:text-canvas hover:bg-ink/5 dark:hover:bg-canvas/5 transition-colors"
+            >
+              <FileSpreadsheet size={15} strokeWidth={1.8} />
+              Import Excel
+            </button>
+            <button
+              onClick={() => navigate("/seller/inventory/new")}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-btn bg-ink dark:bg-canvas text-canvas dark:text-ink text-sm font-semibold hover:opacity-85 active:scale-[0.97] transition-all"
+            >
+              <Plus size={15} strokeWidth={2.5} />
+              Thêm sản phẩm
+            </button>
+          </div>
         </div>
 
         {/* Status tabs */}
@@ -107,7 +171,7 @@ export default function SellerProductPage() {
             <button
               key={tab.value}
               onClick={() => handleStatusTab(tab.value)}
-              className={`px-4 py-2 rounded-[20px] text-sm font-medium transition-all ${
+              className={`px-4 py-2 rounded-btn text-sm font-medium transition-all ${
                 status === tab.value
                   ? "bg-ink dark:bg-canvas text-canvas dark:text-ink"
                   : "text-slate dark:text-[#8A8884] hover:text-ink dark:hover:text-canvas hover:bg-ink/6 dark:hover:bg-canvas/6"
@@ -121,7 +185,10 @@ export default function SellerProductPage() {
         {/* Search + Category */}
         <div className="flex items-center gap-3 mt-4 pb-5 border-b border-ink/8 dark:border-canvas/8">
           <div className="flex items-center gap-2 flex-1 max-w-sm bg-white dark:bg-[#1C1C1A] border border-ink/10 dark:border-canvas/10 rounded-full px-4 py-2.5">
-            <Search size={13} className="text-ink/30 dark:text-canvas/30 shrink-0" />
+            <Search
+              size={13}
+              className="text-ink/30 dark:text-canvas/30 shrink-0"
+            />
             <input
               type="text"
               value={searchInput}
@@ -132,7 +199,11 @@ export default function SellerProductPage() {
             />
             {searchInput && (
               <button
-                onClick={() => { setSearchInput(""); setSearch(""); setPage(1); }}
+                onClick={() => {
+                  setSearchInput("");
+                  setSearch("");
+                  setPage(1);
+                }}
                 className="text-ink/30 dark:text-canvas/30 hover:text-ink/60 dark:hover:text-canvas/60 text-xs leading-none"
               >
                 ✕
@@ -150,7 +221,10 @@ export default function SellerProductPage() {
           {categories.length > 0 && (
             <div className="w-48">
               <SearchableSelect
-                options={categories.map((c) => ({ value: c.id, label: c.name }))}
+                options={categories.map((c) => ({
+                  value: c.id,
+                  label: c.name,
+                }))}
                 value={categoryId}
                 onChange={handleCategoryChange}
                 placeholder="Tất cả danh mục"
@@ -175,13 +249,22 @@ export default function SellerProductPage() {
           </div>
         ) : loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {Array.from({ length: LIMIT }).map((_, i) => <ProductSkeletonCard key={i} />)}
+            {Array.from({ length: LIMIT }).map((_, i) => (
+              <ProductSkeletonCard key={i} />
+            ))}
           </div>
         ) : products.length === 0 ? (
           <ProductEmptyState hasFilter={hasFilter} onClear={clearFilters} />
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {products.map((item) => <ProductCard key={item.id} item={item} />)}
+            {products.map((item) => (
+              <ProductCard
+                key={item.id}
+                item={item}
+                onClick={() => navigate(`/seller/inventory/${item.id}`)}
+                onToggleStatus={() => setConfirmItem(item)}
+              />
+            ))}
           </div>
         )}
 
@@ -201,15 +284,23 @@ export default function SellerProductPage() {
               </button>
 
               {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                .filter(
+                  (p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1,
+                )
                 .reduce<(number | "...")[]>((acc, p, idx, arr) => {
-                  if (idx > 0 && (arr[idx - 1] as number) < p - 1) acc.push("...");
+                  if (idx > 0 && (arr[idx - 1] as number) < p - 1)
+                    acc.push("...");
                   acc.push(p);
                   return acc;
                 }, [])
                 .map((p, idx) =>
                   p === "..." ? (
-                    <span key={`el-${idx}`} className="w-8 text-center text-xs text-ink/30 dark:text-canvas/30">…</span>
+                    <span
+                      key={`el-${idx}`}
+                      className="w-8 text-center text-xs text-ink/30 dark:text-canvas/30"
+                    >
+                      …
+                    </span>
                   ) : (
                     <button
                       key={p}
@@ -236,6 +327,53 @@ export default function SellerProductPage() {
           </div>
         )}
       </div>
+
+      {/* ── Confirm dialog ── */}
+      {confirmItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => !toggling && setConfirmItem(null)}
+          />
+          <div className="relative w-full max-w-sm mx-4 bg-lifted dark:bg-[#1C1C1A] rounded-[28px] shadow-2xl border border-ink/8 dark:border-canvas/8 p-6">
+            <h3 className="text-base font-bold text-ink dark:text-canvas">
+              {confirmItem.status === "ACTIVE"
+                ? "Ngừng bán sản phẩm?"
+                : "Bật bán lại sản phẩm?"}
+            </h3>
+            <p className="mt-2 text-sm text-slate dark:text-[#8A8884] leading-relaxed">
+              {confirmItem.status === "ACTIVE"
+                ? "Sản phẩm sẽ bị ẩn, khách hàng không thể tìm thấy hay đặt mua."
+                : "Sản phẩm sẽ hiển thị công khai trở lại trên cửa hàng."}
+            </p>
+            <p className="mt-1 text-sm font-semibold text-ink dark:text-canvas truncate">
+              {confirmItem.name}
+            </p>
+
+            <div className="flex items-center gap-3 mt-6">
+              <button
+                onClick={() => setConfirmItem(null)}
+                disabled={toggling}
+                className="flex-1 py-2.5 rounded-btn border border-ink/15 dark:border-canvas/15 text-sm font-medium text-ink dark:text-canvas hover:bg-ink/5 dark:hover:bg-canvas/5 disabled:opacity-50 transition-colors"
+              >
+                Huỷ
+              </button>
+              <button
+                onClick={handleConfirmToggle}
+                disabled={toggling}
+                className={`flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-btn text-sm font-semibold disabled:opacity-50 transition-all ${
+                  confirmItem.status === "ACTIVE"
+                    ? "bg-signal text-white hover:opacity-85"
+                    : "bg-emerald-600 text-white hover:opacity-85"
+                }`}
+              >
+                {toggling && <Loader2 size={14} className="animate-spin" />}
+                {confirmItem.status === "ACTIVE" ? "Ngừng bán" : "Bật bán lại"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

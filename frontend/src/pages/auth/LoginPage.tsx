@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import axios from 'axios';
 
 type Role = 'CUSTOMER' | 'SELLER';
@@ -132,7 +132,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => { setPendingCredential(null); setError(''); }}
-                className="flex-none py-3 px-5 bg-white text-ink border-[1.5px] border-ink/20 rounded-[20px] text-sm font-medium hover:border-ink transition-colors"
+                className="flex-none py-3 px-5 bg-white text-ink border-[1.5px] border-ink/20 rounded-btn text-sm font-medium hover:border-ink transition-colors"
               >
                 Huỷ
               </button>
@@ -140,7 +140,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={handleConfirmRole}
                 disabled={googleLoading}
-                className="flex-1 py-3 bg-ink text-canvas rounded-[20px] text-sm font-medium hover:opacity-85 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-3 bg-ink text-canvas rounded-btn text-sm font-medium hover:opacity-85 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {googleLoading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -164,7 +164,7 @@ export default function LoginPage() {
           style={{ width: 380, height: 380, top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />
 
         {/* Ghost watermark */}
-        <span className="absolute select-none pointer-events-none whitespace-nowrap font-medium text-canvas/[0.04]"
+        <span className="absolute select-none pointer-events-none whitespace-nowrap font-medium text-canvas/4"
           style={{ fontSize: 180, letterSpacing: '-3.6px', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }}>
           Login
         </span>
@@ -172,7 +172,7 @@ export default function LoginPage() {
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center gap-10 px-16">
           {/* Circular portrait */}
-          <div className="relative w-56 h-56 rounded-full bg-gradient-to-br from-[#2a2a28] to-[#181816] border border-canvas/10 flex items-center justify-center text-[72px]"
+          <div className="relative w-56 h-56 rounded-full bg-linear-to-br from-[#2a2a28] to-[#181816] border border-canvas/10 flex items-center justify-center text-[72px]"
             style={{ boxShadow: 'rgba(0,0,0,0.25) 0px 70px 110px 0px' }}>
             🛍️
             {/* Satellite CTA */}
@@ -185,7 +185,7 @@ export default function LoginPage() {
           {/* Eyebrow + tagline */}
           <div className="text-center">
             <p className="flex items-center justify-center gap-2 text-[13px] font-bold tracking-[0.52px] uppercase text-canvas/60 mb-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-signal-light flex-shrink-0" />
+              <span className="w-1.5 h-1.5 rounded-full bg-signal-light shrink-0" />
               WELCOME BACK
             </p>
             <p className="text-base font-normal leading-relaxed text-canvas/50 max-w-xs">
@@ -197,11 +197,11 @@ export default function LoginPage() {
 
       {/* ── Form panel ── */}
       <div className="flex flex-1 items-center justify-center px-6 py-12">
-        <div className="w-full max-w-[440px]">
+        <div className="w-full max-w-110">
 
           {/* Eyebrow */}
           <div className="flex items-center gap-2 text-[13px] font-bold tracking-[0.52px] uppercase text-ink mb-5">
-            <span className="w-1.5 h-1.5 rounded-full bg-signal-light flex-shrink-0" />
+            <span className="w-1.5 h-1.5 rounded-full bg-signal-light shrink-0" />
             ĐĂNG NHẬP
           </div>
 
@@ -229,7 +229,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="w-full px-5 py-[14px] rounded-full border border-ink/20 bg-white text-ink text-base font-normal outline-none focus:border-ink placeholder:text-dust transition-colors"
+                className="w-full px-5 py-3.5 rounded-full border border-ink/20 bg-white text-ink text-base font-normal outline-none focus:border-ink placeholder:text-dust transition-colors"
               />
             </div>
 
@@ -247,7 +247,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  className="w-full pl-5 pr-12 py-[14px] rounded-full border border-ink/20 bg-white text-ink text-base font-normal outline-none focus:border-ink placeholder:text-dust transition-colors"
+                  className="w-full pl-5 pr-12 py-3.5 rounded-full border border-ink/20 bg-white text-ink text-base font-normal outline-none focus:border-ink placeholder:text-dust transition-colors"
                 />
                 <button
                   type="button"
@@ -262,7 +262,7 @@ export default function LoginPage() {
 
             {/* Error */}
             {error && (
-              <p className="text-sm font-medium text-signal bg-signal/[0.06] rounded-[20px] px-5 py-2.5">
+              <p className="text-sm font-medium text-signal bg-signal/6 rounded-btn px-5 py-2.5">
                 {error}
               </p>
             )}
@@ -271,7 +271,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading || googleLoading}
-              className="mt-2 w-full py-4 bg-ink text-canvas border-[1.5px] border-ink rounded-[20px] text-base font-medium tracking-[-0.32px] cursor-pointer transition-opacity hover:opacity-85 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="mt-2 w-full py-4 bg-ink text-canvas border-[1.5px] border-ink rounded-btn text-base font-medium tracking-[-0.32px] cursor-pointer transition-opacity hover:opacity-85 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Đang đăng nhập…' : 'Đăng nhập'}
             </button>

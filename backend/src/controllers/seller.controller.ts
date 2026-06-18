@@ -3,7 +3,7 @@ import sellerService from '../services/seller.service';
 import { sendCreated, sendSuccess } from '../utils/response.util';
 import { AppError } from '../middlewares/error.middleware';
 import { AuthRequest } from '../middlewares/auth.middleware';
-import type { CreateSellerProfileInput } from '../dtos/seller.dto';
+import type { CreateSellerProfileInput, UpdateSellerLogoInput, UpdateSellerProfileInput } from '../dtos/seller.dto';
 
 export const createSellerProfile = async (
   req: AuthRequest,
@@ -17,6 +17,36 @@ export const createSellerProfile = async (
     const profile = await sellerService.createProfile(req.user.userId, body);
 
     sendCreated(res, profile, 'Tao ho so nguoi ban thanh cong');
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateSellerLogo = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) throw new AppError('Chưa xác thực', 401);
+    const body = req.body as UpdateSellerLogoInput;
+    const result = await sellerService.updateLogo(req.user.userId, body);
+    sendSuccess(res, result, 'Cập nhật logo thành công');
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateSellerProfile = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) throw new AppError('Chưa xác thực', 401);
+    const body = req.body as UpdateSellerProfileInput;
+    const result = await sellerService.updateProfile(req.user.userId, body);
+    sendSuccess(res, result, 'Cập nhật hồ sơ thành công');
   } catch (error) {
     next(error);
   }

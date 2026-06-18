@@ -4,7 +4,7 @@ import productService from "../services/product.service";
 import { buildPaginatedResult } from "../utils/pagination.util";
 import { sendPaginated, sendCreated, sendSuccess } from "../utils/response.util";
 import { AppError } from "../middlewares/error.middleware";
-import type { CreateProductInput, UpdateProductImagesInput, MyProductsQuery } from "../dtos/product.dto";
+import type { CreateProductInput, UpdateProductImagesInput, UpdateProductInput, MyProductsQuery } from "../dtos/product.dto";
 
 export const createProduct = async (
   req: AuthRequest,
@@ -13,8 +13,6 @@ export const createProduct = async (
 ): Promise<void> => {
   try {
     if (!req.user) throw new AppError("Chưa xác thực", 401);
-
-    console.log(req);
 
     const body = req.body as CreateProductInput;
     const product = await productService.createProduct(req.user.userId, body);
@@ -38,6 +36,60 @@ export const updateProductImages = async (
     const images = await productService.updateProductImages(req.user.userId, productId, body);
 
     sendSuccess(res, images, "Cập nhật ảnh sản phẩm thành công");
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateProduct = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    if (!req.user) throw new AppError("Chưa xác thực", 401);
+
+    const productId = Number(req.params.id);
+    if (isNaN(productId)) throw new AppError("ID sản phẩm không hợp lệ", 400);
+
+    const body = req.body as UpdateProductInput;
+    const product = await productService.updateProduct(req.user.userId, productId, body);
+    sendSuccess(res, product, "Cập nhật sản phẩm thành công");
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getProductById = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const productId = Number(req.params.id);
+    if (isNaN(productId)) throw new AppError("ID sản phẩm không hợp lệ", 400);
+
+    const product = await productService.getProductById(productId);
+    sendSuccess(res, product, "Lấy chi tiết sản phẩm thành công");
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const toggleProductStatus = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    if (!req.user) throw new AppError("Chưa xác thực", 401);
+
+    const productId = Number(req.params.id);
+    if (isNaN(productId)) throw new AppError("ID sản phẩm không hợp lệ", 400);
+
+    const result = await productService.toggleProductStatus(req.user.userId, productId);
+    const message = result.status === "ACTIVE" ? "Đã bật bán sản phẩm" : "Đã ngừng bán sản phẩm";
+    sendSuccess(res, result, message);
   } catch (err) {
     next(err);
   }

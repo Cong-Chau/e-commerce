@@ -25,6 +25,24 @@ export const sellerService = {
     return res.data.data;
   },
 
+  async updateProfile(payload: {
+    shop_name?: string;
+    shop_description?: string;
+    pickup_address?: string;
+    owner_name?: string;
+    owner_phone?: string;
+    shippings?: ShippingMethod[];
+    category_ids?: number[];
+  }): Promise<import('../types/auth').SellerProfile> {
+    const res = await api.put<{ data: import('../types/auth').SellerProfile }>('/sellers/me/profile', payload);
+    return res.data.data;
+  },
+
+  async updateLogo(shopLogo: string): Promise<{ shop_logo: string }> {
+    const res = await api.patch<{ data: { shop_logo: string } }>('/sellers/me/profile/logo', { shop_logo: shopLogo });
+    return res.data.data;
+  },
+
   async suggestDescription(shopName: string, categories?: string[]): Promise<string> {
     const res = await api.post<{ data: { description: string } }>(
       '/ai/suggest-description',

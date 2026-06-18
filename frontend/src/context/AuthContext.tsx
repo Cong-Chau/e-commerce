@@ -1,7 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
-  useContext,
   useEffect,
   useState,
   type ReactNode,
@@ -23,7 +22,7 @@ interface AuthContextValue extends AuthState {
   refreshProfile: () => Promise<User>;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
@@ -92,12 +91,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
-  return ctx;
 }
 
 export type { User };

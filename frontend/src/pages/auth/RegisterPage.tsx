@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { authService } from '../../services/auth.service';
 import axios from 'axios';
 
@@ -215,7 +215,7 @@ export default function RegisterPage() {
                 <button
                   type="submit"
                   disabled={otpLoading}
-                  className="mt-2 w-full py-4 bg-ink text-canvas border-[1.5px] border-ink rounded-[20px] text-base font-medium tracking-[-0.32px] cursor-pointer transition-opacity hover:opacity-85 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="mt-2 w-full py-4 bg-ink text-canvas border-[1.5px] border-ink rounded-btn text-base font-medium tracking-[-0.32px] cursor-pointer transition-opacity hover:opacity-85 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {otpLoading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -322,7 +322,7 @@ export default function RegisterPage() {
                         key={r}
                         type="button"
                         onClick={() => setRole(r)}
-                        className={`flex-1 py-3 px-5 rounded-[20px] border-[1.5px] text-[15px] font-medium transition-colors
+                        className={`flex-1 py-3 px-5 rounded-btn border-[1.5px] text-[15px] font-medium transition-colors
                           ${role === r
                             ? 'bg-ink text-canvas border-ink'
                             : 'bg-white text-ink border-ink/20 hover:border-ink'
@@ -340,14 +340,14 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => { setStep(1); setError(''); setOtp(''); }}
-                    className="flex-none py-4 px-6 bg-white text-ink border-[1.5px] border-ink/20 rounded-[20px] text-base font-medium hover:border-ink transition-colors"
+                    className="flex-none py-4 px-6 bg-white text-ink border-[1.5px] border-ink/20 rounded-btn text-base font-medium hover:border-ink transition-colors"
                   >
                     ← Quay lại
                   </button>
                   <button
                     type="submit"
                     disabled={registerLoading || otp.length < 6}
-                    className="flex-1 py-4 bg-ink text-canvas border-[1.5px] border-ink rounded-[20px] text-base font-medium tracking-[-0.32px] cursor-pointer transition-opacity hover:opacity-85 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 py-4 bg-ink text-canvas border-[1.5px] border-ink rounded-btn text-base font-medium tracking-[-0.32px] cursor-pointer transition-opacity hover:opacity-85 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {registerLoading ? (
                       <span className="flex items-center justify-center gap-2">

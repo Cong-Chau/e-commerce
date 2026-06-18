@@ -7,12 +7,9 @@ const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as
   | undefined;
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env
   .VITE_CLOUDINARY_UPLOAD_PRESET as string | undefined;
-console.log("Cloudinary config:", {
-  CLOUDINARY_CLOUD_NAME,
-  CLOUDINARY_UPLOAD_PRESET,
-});
+
 export const cloudinaryService = {
-  async uploadImage(file: File): Promise<string> {
+  async uploadImage(file: File, folder = "seller-profiles"): Promise<string> {
     if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
       throw new Error("Cloudinary chưa được cấu hình.");
     }
@@ -20,7 +17,7 @@ export const cloudinaryService = {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-    formData.append("folder", "seller-profiles");
+    formData.append("folder", folder);
 
     const response = await fetch(
       `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,

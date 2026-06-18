@@ -20,13 +20,21 @@ function formatPrice(price: string) {
   return Number(price).toLocaleString("vi-VN") + "đ";
 }
 
-export default function ProductCard({ item }: { item: ProductItem }) {
+export default function ProductCard({
+  item,
+  onClick,
+  onToggleStatus,
+}: {
+  item: ProductItem;
+  onClick?: () => void;
+  onToggleStatus?: () => void;
+}) {
   const badge = STATUS_BADGE[item.status];
   const thumb = item.images?.[0]?.image_url;
   const stockLow = item.stock > 0 && item.stock < 10;
 
   return (
-    <div className="group rounded-[28px] bg-lifted dark:bg-[#1C1C1A] overflow-hidden border border-ink/6 dark:border-canvas/6 hover:border-ink/16 dark:hover:border-canvas/16 hover:shadow-[0_8px_32px_rgba(0,0,0,0.06)] transition-all duration-200 cursor-pointer">
+    <div onClick={onClick} className="group rounded-[28px] bg-lifted dark:bg-[#1C1C1A] overflow-hidden border border-ink/6 dark:border-canvas/6 hover:border-ink/16 dark:hover:border-canvas/16 hover:shadow-[0_8px_32px_rgba(0,0,0,0.06)] transition-all duration-200 cursor-pointer">
       <div className="relative aspect-square overflow-hidden bg-ink/4 dark:bg-canvas/4">
         {thumb ? (
           <img
@@ -70,6 +78,31 @@ export default function ProductCard({ item }: { item: ProductItem }) {
             <span>{item.stock}</span>
           </div>
         </div>
+
+        {onToggleStatus && (
+          <div
+            className="mt-3 flex items-center justify-between"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="text-[11px] text-ink/40 dark:text-canvas/40">
+              {item.status === "ACTIVE" ? "Đang bán" : "Đã ẩn"}
+            </span>
+            <button
+              onClick={onToggleStatus}
+              className={`relative w-9 h-5 rounded-full transition-colors duration-200 focus:outline-none ${
+                item.status === "ACTIVE"
+                  ? "bg-emerald-500"
+                  : "bg-ink/15 dark:bg-canvas/15"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${
+                  item.status === "ACTIVE" ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

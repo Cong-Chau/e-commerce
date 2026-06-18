@@ -7,7 +7,7 @@ const api = axios.create({
 });
 
 // accessToken/refreshToken sống trong httpOnly cookie, browser tự gửi kèm mọi request.
-const NO_RETRY_PATHS = ['/auth/login', '/auth/register', '/auth/google', '/auth/refresh', '/auth/send-otp'];
+const NO_RETRY_PATHS = ['/auth/login', '/auth/register', '/auth/google', '/auth/refresh', '/auth/send-otp', '/auth/logout'];
 
 interface RetryableConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
@@ -33,6 +33,8 @@ api.interceptors.response.use(
       await refreshPromise;
       return api(config);
     } catch (refreshError) {
+      await api.post('/auth/logout').catch(() => {});
+      window.location.href = '/login';
       return Promise.reject(refreshError);
     }
   },
